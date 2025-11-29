@@ -39,7 +39,7 @@ Curve Register: ≈ 2n qubits
 Total: ≈ 3n qubits
 135-bit Calculation: 405 Qubits required.
 Verdict: Impossible on IBM Marrakech
-2. The "Dragon Algo" (Your Contribution)
+2. The "Dragon Algo" (My Contribution)
 This is the novel architecture built based on your requirements. It is an Engineering Optimization specifically designed for Range-Bound Puzzles (like the Satoshi/Bitcoin Challenge).
 
 The Architecture
