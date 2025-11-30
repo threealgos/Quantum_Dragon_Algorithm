@@ -1,6 +1,6 @@
 """
 SUPER-TITAN RETRIEVER (v113)
-----------------------------
+-----------------------------
 Purpose: Recover Private Keys from completed IBM Quantum Jobs.
 Logic: Applies the Super-Titan v113 Universal Solver (Depth Scanning + Multi-Phase Analysis).
 """
