@@ -1288,16 +1288,34 @@ def main():
         job = sampler.run([transpiled_qc], shots=SHOTS)
         print(f"    Job ID: {job.job_id()}")
         
-        res = job.result()
-        try: counts = res[0].data.meas.get_counts()
-        except: 
-            try: counts = res[0].data.c.get_counts()
-            except: 
-                try: counts = res[0].data.meas_bits.get_counts()
-                except:
-                    try: counts = res[0].data.m0.get_counts()
-                    except: counts = res[0].data.phase_bits.get_counts()
-                    
+        result = job.result()
+        # --- 8 Robust Extraction Attempts ---
+        counts = None
+        extraction_attempts = [
+            lambda result: result[0].data.meas.get_counts(),
+            lambda result: result[0].data.c.get_counts(),
+            lambda result: result[0].data.meas_bits.get_counts(),
+            lambda result: result[0].data.meas_state.get_counts(),
+            lambda result: result[0].data.meas_f.get_counts(),
+            lambda result: result[0].data.flag_meas.get_counts(),
+            lambda result: result[0].data.flag_bits.get_counts(),
+            lambda result: result[0].data.meas.get_counts(),  # again as last fallback
+        ]
+        for i, attempt in enumerate(extraction_attempts):
+            try:
+                counts = attempt(result)
+                print(f"[i] Counts extraction succeeded on attempt {i+1}.")
+                break
+            except Exception as e:
+                continue
+
+        if not counts:
+            print("[!] Could not extract counts from result object.")
+            return
+
+        print(f"[i] Extracted {len(counts)} unique bitstrings.")
+
+        # 4. Run Solver
         _universal_solver(counts, run_bits, start_val, target_pub[0], f"Mode {mode}", search_depth=8192)
         
     except Exception as e: 
