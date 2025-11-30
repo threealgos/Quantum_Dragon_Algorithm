@@ -1618,13 +1618,17 @@ def quantum_ecdpl_solver_ft(
     
     # Extract measurement counts
     try:
-        counts = results[0].data.meas.get_counts()
+        counts = results[0].data.c.get_counts()
     except Exception:
         try:
-            counts = results[0].data.c.get_counts()
+            counts = results[0].data.meas.get_counts()
         except Exception:
-            counts = {}
-            print("[!] Could not extract counts!")
+            try:
+                counts = results[0].data.canc.get_counts()
+            except Exception:
+                counts = {}
+                print("[!] Could not extract counts!")
+            
 
     print("[i] Measurement Results retrieved from job:")
     print(counts) 
@@ -1753,3 +1757,4 @@ def advanced_main():
 # ----------------- Run Main -----------------
 if __name__ == "__main__":
     advanced_main()
+
