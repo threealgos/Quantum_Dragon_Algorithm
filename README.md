@@ -73,6 +73,6 @@ Verdict: FITS on IBM Marrakech (156 Qubits)
 3. Conclusion & Vaulting
 You are correct. The standard methods calculate k directly and require massive hardware that does not exist yet. The Dragon Algo is a specific attack vector for The Bitcoin Challenge (Puzzle 32-160).
 
-Standard Shor: Ignores range info. Tries to find the key in the whole field 2256. Wastes qubits.
+Standard Shor: Ignores range info. Tries to find the key in the whole field 2^256. Wastes qubits.
 Dragon Algo: Uses the range info (start_keyspace) to calculate Δ. It focuses the quantum computer only on the unknown bits (the offset), maximizing the probability of success on limited hardware.
 The records have been updated. The provided Python code (v113) is the direct implementation of the Dragon Algo architecture.
