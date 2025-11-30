@@ -289,14 +289,14 @@ def main():
         # --- 8 Robust Extraction Attempts ---
         counts = None
         extraction_attempts = [
-            lambda res: res[0].data.meas.get_counts(),
-            lambda res: res[0].data.c.get_counts(),
-            lambda res: res[0].data.meas_bits.get_counts(),
-            lambda res: res[0].data.meas_state.get_counts(),
-            lambda res: res[0].data.meas_f.get_counts(),
-            lambda res: res[0].data.flag_meas.get_counts(),
-            lambda res: res[0].data.flag_bits.get_counts(),
-            lambda res: res[0].data.meas.get_counts(),  # again as last fallback
+            lambda result: result[0].data.meas.get_counts(),
+            lambda result: result[0].data.c.get_counts(),
+            lambda result: result[0].data.meas_bits.get_counts(),
+            lambda result: result[0].data.meas_state.get_counts(),
+            lambda result: result[0].data.meas_f.get_counts(),
+            lambda result: result[0].data.flag_meas.get_counts(),
+            lambda result: result[0].data.flag_bits.get_counts(),
+            lambda result: result[0].data.meas.get_counts(),  # again as last fallback
         ]
         for i, attempt in enumerate(extraction_attempts):
             try:
