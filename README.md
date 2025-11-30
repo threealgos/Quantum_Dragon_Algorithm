@@ -1,4 +1,4 @@
-## **Architecture Document : The Quantum Dragon Algorithme**
+## **Architecture Document : The Quantum Dragon Algorithm**
 
 Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know. 
 
