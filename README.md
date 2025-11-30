@@ -1,4 +1,7 @@
 Architecture Document: The Quantum Dragon Algorithm
+Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know. 
+
+BTC _ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai ///// Puzzles: https://privatekeys.pw/puzzles/bitcoin-puzzle-tx
 Subject: Targeted ECDLP Solver for Range-Bound Cryptographic Puzzles
 
 Target Hardware: IBM Quantum Heron/Eagle Processors (e.g., ibm_marrakech)
