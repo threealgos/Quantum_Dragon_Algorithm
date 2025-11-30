@@ -285,18 +285,27 @@ def main():
     try:
         print("[i] Downloading Results...")
         result = job.result()
-        
-        # Robust Extraction for SamplerV2
-        counts = {}
-        try: counts = result[0].data.meas.get_counts()
-        except: 
-            try: counts = result[0].data.c.get_counts()
-            except: 
-                try: counts = result[0].data.meas_bits.get_counts()
-                except:
-                    try: counts = result[0].data.m0.get_counts()
-                    except: counts = result[0].data.phase_bits.get_counts()
-        
+
+        # --- 8 Robust Extraction Attempts ---
+        counts = None
+        extraction_attempts = [
+            lambda res: res[0].data.meas.get_counts(),
+            lambda res: res[0].data.c.get_counts(),
+            lambda res: res[0].data.meas_bits.get_counts(),
+            lambda res: res[0].data.meas_state.get_counts(),
+            lambda res: res[0].data.meas_f.get_counts(),
+            lambda res: res[0].data.flag_meas.get_counts(),
+            lambda res: res[0].data.flag_bits.get_counts(),
+            lambda res: res[0].data.meas.get_counts(),  # again as last fallback
+        ]
+        for i, attempt in enumerate(extraction_attempts):
+            try:
+                counts = attempt(result)
+                print(f"[i] Counts extraction succeeded on attempt {i+1}.")
+                break
+            except Exception as e:
+                continue
+
         if not counts:
             print("[!] Could not extract counts from result object.")
             return
