@@ -874,7 +874,7 @@ def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, m
     try:
         job = service.job(job_id)
         # Added QUEUED to status check so it doesn't crash while waiting in line
-        while job.status().name not in ["DONE", "COMPLETED", "ERROR", "CANCELLED"]:
+        while job.status().name not in ["DONE", "QUEUED", "COMPLETED", "ERROR", "CANCELLED"]:
             logger.info(f"Status: {job.status().name}...")
             time.sleep(60)
             
@@ -1038,4 +1038,5 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+
 
