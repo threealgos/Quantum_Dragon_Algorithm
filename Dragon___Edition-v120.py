@@ -1,4 +1,4 @@
-#Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
+# Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
 #======================================================================================================
 """
 HERE Is Quantum ECDLP Solver - Dragon Mode Edition (v120) 🐉
@@ -891,3 +891,4 @@ def run_best_solver():
 if __name__ == "__main__":
     run_best_solver()
  
+
