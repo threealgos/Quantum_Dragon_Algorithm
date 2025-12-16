@@ -747,7 +747,10 @@ def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
         if scale > 1:
             for _ in range(scale - 1):
                 scaled_qc.barrier(); [sqc.id(q) for q in sqc.qubits]
-        tqc = pm.run(sqc)
+        
+        # Single efficient transpilation with ALAP
+        tqc = transpile(pm.run(scaled_qc), backend=backend, optimization_level=3, scheduling_method='alap', routing_method='sabre')
+        
         sampler = Sampler(mode=backend)
         sampler = configure_sampler_options(sampler)
         sampler.options.resilience_level = 0 # Raw for ZNE
@@ -890,6 +893,4 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
- 
-
 
