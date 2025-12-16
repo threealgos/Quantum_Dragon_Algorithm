@@ -873,7 +873,8 @@ def save_key(k: int):
 def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, method):
     try:
         job = service.job(job_id)
-        while job.status().name not in ["DONE", "QUEUED", "COMPLETED", "ERROR", "CANCELLED"]:
+        # Added QUEUED to status check so it doesn't crash while waiting in line
+        while job.status().name not in ["DONE", "COMPLETED", "ERROR", "CANCELLED"]:
             logger.info(f"Status: {job.status().name}...")
             time.sleep(60)
             
@@ -883,7 +884,40 @@ def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, m
             
         job_result = job.result()
         counts = safe_get_counts(job_result[0])
+        
+        # --- NEW EXTRA CHECK: POST-QUANTUM WINDOW SCAN ---
+        # Instead of just doing math, we assume the result might be the key (or close to it)
+        # and run a mini brute-force around that number.
+        if counts:
+            # 1. Get the most frequent measurement
+            top_meas = max(counts, key=counts.get)
+            
+            # 2. Clean and convert to Integer
+            clean_meas = top_meas.replace(" ", "")
+            # Filter only valid bits if there are markers
+            clean_meas = "".join([b for b in clean_meas if b in '01'])
+            
+            if clean_meas:
+                measured_int = int(clean_meas, 2)
+                
+                # 3. Define a window (e.g., Result to Result + 10,000)
+                # This helps if the QPU was slightly off by LSBs due to noise
+                logger.info(f"[Extra Check] Scanning window around measurement: {hex(measured_int)}")
+                
+                # We reuse the existing precompute function!
+                # It works perfectly here because it just checks a range.
+                hits = precompute_good_indices_range(measured_int, measured_int + 10000, target_pub_x)
+                
+                if hits:
+                    # hits[0] is the offset from measured_int
+                    final_key = measured_int + hits[0]
+                    logger.info(f"FOUND VIA POST-QUANTUM CHECK: {hex(final_key)}")
+                    save_key(final_key)
+                    return final_key
+
+        # If the direct check failed, proceed to standard hybrid processing (Continued Fractions etc)
         return hybrid_post_process(counts, n_bits, ORDER, start_val, target_pub_x, method)
+
     except Exception as e:
         logger.error(f"Retrieval failed: {e}")
         return None
@@ -1004,3 +1038,4 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+
