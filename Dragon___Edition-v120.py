@@ -1,7 +1,7 @@
 #Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
 #======================================================================================================
 """
-HERE Is Quantum ECDLP Solver - Dragon Mode Edition (v120)
+HERE Is Quantum ECDLP Solver - Dragon Mode Edition (v120) 🐉
 ----------------------------------------------
 Integrates ALL 21 MODES including the fixed Standard IPE.
 
@@ -18,6 +18,13 @@ MODES LIST:
  9. Shadow 2D              20. Matrix Mod (Unitary)
 10. Reverse IPE
 
+--------------------------------------------------------
+Integrates ALL 21 MODES with EXPLICIT IMPLEMENTATIONS .
+[+] Mode 20 Scalable for 135+ bits (Smart Gate).
+[+] Fault Tolerance (FT) Restored.
+[+] Aggressive Result Retrieval.
+[+] Full Error Mitigation.
+ 
 MITIGATION: Manual ZNE, TREX, Twirling, DD (XY4).
 """
 
@@ -35,8 +42,9 @@ import math
 import matplotlib.pyplot as plt
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.visualization import plot_histogram
-from qiskit.circuit import UnitaryGate
-from math import gcd, pi
+from qiskit.circuit import UnitaryGate, Gate
+from qiskit.circuit.library import QFTGate, HGate, CXGate, CCXGate
+from math import gcd, pi, ceil, log2
 from typing import Optional, List, Dict
 import pickle
 from ecdsa.ellipticcurve import Point, CurveFp
@@ -65,36 +73,65 @@ CURVE = CurveFp(P, A, B)
 G = Point(CURVE, Gx, Gy)
 
 class Config:
-    # --- Target ---
-    BITS = 135
-    KEYSPACE_START = 0x4000000000000000000000000000000000
-    COMPRESSED_PUBKEY_HEX = "02145d2611c823a396ef6712ce0f712f09b9b4f3135e3e0aa3230fb9b6d08d1e16"
-    
-    # --- Backend ---
-    BACKEND = "ibm_fez" #  And For Future backends ~1386 Qubits Nighthawk/Kookaburra 
-    TOKEN = "YOUR_IBM_TOKEN"
-    CRN = "YOUR_IBM_CRN"
-    
-    # --- Mode Selection ---
-    # Set to integer 0-20 or "smart"
-    METHOD = "smart" 
-    
-    # --- Tuning ---
-    USE_COMPRESSED = True    # Hive x-only logic
-    USE_FLAGS = 2            # Verification
-    USE_FT = False           # Fault Tolerance Toggle
-    
-    # --- MITIGATION ---
-    SHOTS = 8192 # 16384 & 100000
-    OPT_LEVEL = 3
-    USE_MANUAL_ZNE = True    
-    USE_DD = True
-    DD_SEQUENCE = "XY4"      
-    USE_MEM = True           
+    def __init__(self):
+     
+        # --- Target ---
+        self.BITS = 135
+        self.KEYSPACE_START = 0x4000000000000000000000000000000000
+        self.COMPRESSED_PUBKEY_HEX = "02145d2611c823a396ef6712ce0f712f09b9b4f3135e3e0aa3230fb9b6d08d1e16"
+        
+        # --- Backend ---
+        self.BACKEND = "ibm_fez"  #  And For Future backends ~1386 Qubits Nighthawk/Kookaburra 
+        self.TOKEN = "YOUR_IBM_TOKEN"
+        self.CRN = "YOUR_IBM_CRN"
+        
+        # -- Mode Selection Set to integer 0-20 or "smart"
+        self.METHOD = "smart" 
+     
+        # --- Tuning ---
+        self.USE_COMPRESSED = True    # Hive x-only logic
+        self.USE_FLAGS = 2            # Extra_Verification
+        self.USE_FT = False           # Fault Tolerance Toggle
+        
+        # --- MITIGATION ---
+        self.SHOTS = 8192  # MAX_SHOTS = 16384 & 100,000 & 1 million
+        self.OPT_LEVEL = 3
+        self.USE_MANUAL_ZNE = True    
+        self.USE_DD = True
+        self.DD_SEQUENCE = "XY4"      
+        self.USE_MEM = True           
     
     @property
     def INTERNAL_RESILIENCE_LEVEL(self):
         return 1 if self.USE_MANUAL_ZNE else 2
+
+    def user_menu(self):
+        print("\n=== Quantum ECDLP Solver - Dragon Mode Edition (v120) 🐉 ===")
+        print("MODES: [0-20] All Modes Active.")
+        
+        m = input(f"Select Mode (default {self.METHOD}): ").strip()
+        if m: self.METHOD = m if m == "smart" else int(m)
+
+        b = input(f"Target Bits (default {self.BITS}): ").strip()
+        if b: self.BITS = int(b)
+
+        if self.METHOD == 8 or self.METHOD == "smart":
+            f = input(f"Use Flags [1 or 2] (default {self.USE_FLAGS}): ").strip()
+            if f: self.USE_FLAGS = int(f)
+
+        # FT Selection
+        ft = input(f"Enable Fault Tolerance (Repetition)? [y/n] (default {'y' if self.USE_FT else 'n'}): ").strip().lower()
+        self.USE_FT = (ft == 'y')
+
+        bk = input(f"Backend Name (default {self.BACKEND}): ").strip()
+        if bk: self.BACKEND = bk
+
+        s = input(f"Shots (default {self.SHOTS}): ").strip()
+        if s: self.SHOTS = int(s)
+
+        z = input(f"Enable Manual ZNE? [y/n] (default {'y' if self.USE_MANUAL_ZNE else 'n'}): ").strip().lower()
+        self.USE_MANUAL_ZNE = (z == 'y')
+        print("=================================\n")
 
 config = Config()
 
@@ -180,10 +217,31 @@ def precompute_good_indices_range(start, end, target_qx, gx=G.x(), gy=G.y(), p=P
             good.append(k - start)
     return good
 
+# --- FAULT TOLERANCE PRIMITIVES (Enhanced) ---
+def prepare_verified_ancilla(qc: QuantumCircuit, qubit, initial_state=0):
+    """
+    Resets ancilla to a clean state.
+    Applied BEFORE encoding to ensure no garbage from previous loops.
+    """
+    qc.reset(qubit)
+    if initial_state == 1: 
+        qc.x(qubit)
+
+def encode_repetition(qc, logical_qubit, ancillas):
+    """Encodes 1 qubit into 3 physical qubits (Bit Flip Code)"""
+    qc.cx(logical_qubit, ancillas[0])
+    qc.cx(logical_qubit, ancillas[1])
+
+def decode_repetition(qc, ancillas, logical_qubit):
+    """Decodes 3 physical qubits back to logical using Majority Vote"""
+    qc.cx(ancillas[0], logical_qubit)
+    qc.cx(ancillas[1], logical_qubit)
+    qc.ccx(ancillas[0], ancillas[1], logical_qubit)
+
+
 # ==========================================
 # 3. QUANTUM PRIMITIVES & ORACLES
 # ==========================================
-
 class GeometricIPE:
     def __init__(self, n_bits): self.n = n_bits
     def _oracle_geometric_phase(self, qc, ctrl, state_reg, point_val):
@@ -207,16 +265,12 @@ def draper_add_const(qc: QuantumCircuit, ctrl, target: QuantumRegister, value: i
         if ctrl: qc.cp(angle, ctrl, target[i])
         else: qc.p(angle, target[i])
 
-# --- IPE Oracle (Requested Explicitly) ---
 def ipe_oracle_phase(qc, ctrl, point_reg, delta_point, k_step, order=ORDER):
-    """Explicit IPE Oracle for Step k."""
-    # Applies phase: delta.x * 2^k
     power = 1 << k_step
     const_x = (delta_point.x() * power) % order
     if const_x:
         draper_add_const(qc, ctrl, point_reg, const_x)
 
-# --- FT Modular Adder ---
 def ft_draper_modular_adder(qc, ctrl, target_reg, ancilla_reg, value, modulus=N):
     n = len(target_reg)
     temp_overflow = ancilla_reg[0] 
@@ -231,7 +285,6 @@ def ft_draper_modular_adder(qc, ctrl, target_reg, ancilla_reg, value, modulus=N)
     qc.cx(target_reg[-1], temp_overflow) 
     qc.reset(temp_overflow)
 
-# --- 1D Serial Oracle ---
 def draper_adder_oracle_1d_serial(qc: QuantumCircuit, ctrl, target, dx, dy):
     n = len(target)
     qft_reg(qc, target)
@@ -240,7 +293,6 @@ def draper_adder_oracle_1d_serial(qc: QuantumCircuit, ctrl, target, dx, dy):
         qc.cp(angle, ctrl, target[i])
     iqft_reg(qc, target)
 
-# --- 2D Oracle ---
 def draper_2d_oracle(qc: QuantumCircuit, ctrl, target: QuantumRegister, dx: int, dy: int):
     n = len(target)
     qft_reg(qc, target)
@@ -251,7 +303,6 @@ def draper_2d_oracle(qc: QuantumCircuit, ctrl, target: QuantumRegister, dx: int,
         qc.cp(angle_y, ctrl, target[i])
     iqft_reg(qc, target)
 
-# --- AB Oracle ---
 def ecdlp_oracle_ab(qc, a_reg, b_reg, point_reg, points, ancilla_reg, order=ORDER):
     for i in range(len(a_reg)):
         pt = points[min(i, len(points)-1)]
@@ -262,11 +313,25 @@ def ecdlp_oracle_ab(qc, a_reg, b_reg, point_reg, points, ancilla_reg, order=ORDE
         val = pt.x() % order if pt else 0
         if val: ft_draper_modular_adder(qc, b_reg[i], point_reg, ancilla_reg, val, order)
 
-# --- Matrix Oracle ---
-def add_const_mod_gate(c: int, mod: int) -> UnitaryGate:
-    mat = np.zeros((mod, mod))
-    for x in range(mod): mat[(x + c) % mod, x] = 1
-    return UnitaryGate(mat, label=f"+{c} mod {mod}")
+# --- SMART SCALABLE MATRIX/DRAPER GATE ---
+def add_const_mod_gate(c: int, mod: int) -> Gate:
+    n_qubits = math.ceil(math.log2(mod)) if mod > 1 else 1
+    if mod <= 64:
+        mat = np.zeros((mod, mod))
+        for x in range(mod): mat[(x + c) % mod, x] = 1
+        full_dim = 2**n_qubits
+        if full_dim > mod:
+            full_mat = np.eye(full_dim, dtype=complex)
+            full_mat[:mod, :mod] = mat
+            return UnitaryGate(full_mat, label=f"+{c} mod {mod}")
+        return UnitaryGate(mat, label=f"+{c} mod {mod}")
+    else:
+        qc = QuantumCircuit(n_qubits, name=f"+{c} (Draper)")
+        qc.append(QFTGate(n_qubits, do_swaps=False), range(n_qubits))
+        for i in range(n_qubits):
+            qc.p(2 * math.pi * c / (2 ** (n_qubits - i)), i)
+        qc.append(QFTGate(n_qubits, do_swaps=False).inverse(), range(n_qubits))
+        return qc.to_gate()
 
 def apply_semiclassical_qft_phase_component(qc, ctrl, creg, n_bits, k):
     for m in range(k):
@@ -274,54 +339,56 @@ def apply_semiclassical_qft_phase_component(qc, ctrl, creg, n_bits, k):
         with qc.if_test((creg[m], 1)):
             qc.p(angle, ctrl)
 
-# --- Fault Tolerance ---
-def encode_repetition(qc, logical_qubit, ancillas):
-    qc.cx(logical_qubit, ancillas[0])
-    qc.cx(logical_qubit, ancillas[1])
-
-def decode_repetition(qc, ancillas, logical_qubit):
-    qc.cx(ancillas[0], logical_qubit)
-    qc.cx(ancillas[1], logical_qubit)
-    qc.ccx(ancillas[0], ancillas[1], logical_qubit)
-
 # ==========================================
-# 4. CIRCUIT BUILDER
+# 4. CIRCUIT BUILDER (ALL 21 MODES EXPLICIT)
 # ==========================================
 
 def get_best_mode_id(bits, available_qubits):
-    """Maps Smart Mode to integer ID."""
-    req_ab = 2*bits + 5
-    req_fixed = bits + 6
-    if req_ab < available_qubits: return 5 # AB
-    elif req_fixed < available_qubits: return 19 # Fixed AB
-    else: return 2 # Hive
+    req_ab = 3*bits + 4
+    if req_ab < available_qubits: return 5 
+    else: return 2 
 
 def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
     Q = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
     delta = compute_offset(Q, config.KEYSPACE_START)
     points = precompute_points(bits)
     
+    # --- FT SETUP ---
+    ft_anc = QuantumRegister(2, "ft_anc") if config.USE_FT else None
+
     # --- 0. PROBE ---
     if mode_id == 0:
         qc = QuantumCircuit(2, 2)
         qc.h(0); qc.cx(0, 1); qc.measure_all()
         return qc
         
-    # --- 1. IPE (STANDARD) - WITH REQUESTED ORACLE ---
+    # --- 1. IPE (STANDARD) ---
     elif mode_id == 1:
         ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
         creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(ctrl, state, creg)
+        regs = [ctrl, state, creg]
+        if config.USE_FT: regs.append(ft_anc)
+        qc = QuantumCircuit(*regs)
         for k in range(bits):
             if k>0: qc.reset(ctrl[0])
             qc.h(ctrl[0])
+            
+            # FT: Prepare & Encode
+            if config.USE_FT: 
+                prepare_verified_ancilla(qc, ft_anc[0])
+                prepare_verified_ancilla(qc, ft_anc[1])
+                encode_repetition(qc, ctrl[0], ft_anc)
+            
             apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
-            # Explicit call to ipe_oracle_phase
             ipe_oracle_phase(qc, ctrl[0], state, delta, k, ORDER)
+            
+            # FT: Decode
+            if config.USE_FT: decode_repetition(qc, ft_anc, ctrl[0])
+            
             qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
         return qc
 
-    # --- 2. HIVE (Optimized) ---
+    # --- 2. HIVE ---
     elif mode_id == 2:
         state_bits = (bits // 2 + 1)
         ctrl = QuantumRegister(4, "ctrl"); state = QuantumRegister(state_bits, "state")
@@ -349,94 +416,98 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
             qc.h(ctrl[:chunk])
             for j in range(chunk):
                 k = start + j; pwr = 1 << k
-                draper_2d_oracle(qc, ctrl[j], state, (delta.x()*pwr)%N, (delta.y()*pwr)%N)
+                draper_2d_oracle(qc, ctrl[j], state, (delta.x()*(1<<k))%N, (delta.y()*(1<<k))%N)
                 apply_semiclassical_qft_phase_component(qc, ctrl[j], creg, bits, k)
             qc.measure(ctrl[:chunk], creg[start:start+chunk])
         return qc
 
-    # --- 4. Semiclassical (Dynamic IPE) ---
+    # --- 4. SEMICLASSICAL ---
     elif mode_id == 4:
-        ctrl = QuantumRegister(1, "ctrl")
-        state = QuantumRegister(bits, "state")
+        ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
         creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(ctrl, state, creg)
-        
+        regs = [ctrl, state, creg]
+        if config.USE_FT: regs.append(ft_anc)
+        qc = QuantumCircuit(*regs)
         for k in range(bits):
-            # Reset control qubit for next bit (dynamic circuit)
-            if k > 0:
-                qc.reset(ctrl[0])
-            
-            # Superposition on control
+            if k > 0: qc.reset(ctrl[0])
             qc.h(ctrl[0])
             
-            # Semiclassical phase correction from previous measurements
+            # FT: Prepare & Encode
+            if config.USE_FT: 
+                prepare_verified_ancilla(qc, ft_anc[0])
+                prepare_verified_ancilla(qc, ft_anc[1])
+                encode_repetition(qc, ctrl[0], ft_anc)
+            
             for m in range(k):
                 angle = -math.pi / (2 ** (k - m))
-                with qc.if_test((creg[m], 1)):
-                    qc.p(angle, ctrl[0])
-            
-            # Apply oracle: add (delta * 2^k) using 2D Draper oracle
+                with qc.if_test((creg[m], 1)): qc.p(angle, ctrl[0])
             power = 1 << k
-            dx = (delta.x() * power) % N
-            dy = (delta.y() * power) % N
+            dx = (delta.x() * power) % N; dy = (delta.y() * power) % N
             draper_2d_oracle(qc, ctrl[0], state, dx, dy)
             
-            # Basis change and measure
-            qc.h(ctrl[0])
-            qc.measure(ctrl[0], creg[k])
-        
+            # FT: Decode
+            if config.USE_FT: decode_repetition(qc, ft_anc, ctrl[0])
+            
+            qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
         return qc
 
-    # --- 5. AB (SHOR) ---
+    # --- 5. AB SHOR ---
     elif mode_id == 5:
-        a = QuantumRegister(bits, "a"); b = QuantumRegister(bits, "b")
-        anc = QuantumRegister(4, "anc"); creg = ClassicalRegister(2*bits, "meas")
-        qc = QuantumCircuit(a, b, anc, creg)
+        a, b, acc, anc, creg = QuantumRegister(bits,"a"), QuantumRegister(bits,"b"), QuantumRegister(bits,"acc"), QuantumRegister(4,"anc"), ClassicalRegister(2*bits,"meas")
+        qc = QuantumCircuit(a, b, acc, anc, creg)
         qc.h(a); qc.h(b)
-        ecdlp_oracle_ab(qc, a, b, b, points, anc, ORDER)
-        iqft_reg(qc, a); iqft_reg(qc, b)
+        ecdlp_oracle_ab(qc, a, b, acc, points, anc, ORDER)
+        qc.append(QFTGate(bits, inverse=True), a)
+        qc.append(QFTGate(bits, inverse=True), b)
         qc.measure(a, creg[:bits]); qc.measure(b, creg[bits:])
         return qc
 
     # --- 6. FT DRAPER TEST ---
     elif mode_id == 6:
-        reg = QuantumRegister(bits, "reg"); ctrl = QuantumRegister(1, "ctrl")
-        anc = QuantumRegister(2, "anc"); creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(reg, ctrl, anc, creg)
-        qc.x(ctrl); ft_draper_modular_adder(qc, ctrl[0], reg, anc, 12345, N)
-        qc.measure(reg, creg)
-        return qc
+        qc = QuantumCircuit(QuantumRegister(bits), QuantumRegister(1), QuantumRegister(2), ClassicalRegister(bits))
+        qc.x(qc.qregs[1]); ft_draper_modular_adder(qc, qc.qregs[1][0], qc.qregs[0], qc.qregs[2], 12345, N); qc.measure(qc.qregs[0], qc.cregs[0]); return qc
 
     # --- 7. GEOMETRIC ---
     elif mode_id == 7:
-        geo = GeometricIPE(bits)
-        ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
-        creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(ctrl, state, creg)
+        geo = GeometricIPE(bits); qc = QuantumCircuit(QuantumRegister(1), QuantumRegister(bits), ClassicalRegister(bits))
+        ctrl, state, creg = qc.qregs[0], qc.qregs[1], qc.cregs[0]
         qc.append(synth_qft_full(bits, do_swaps=False).to_gate(), state) 
         for k in range(bits):
             if k>0: qc.reset(ctrl[0])
-            qc.h(ctrl[0])
-            geo._oracle_geometric_phase(qc, ctrl[0], state, delta)
-            apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
+            qc.h(ctrl[0]); geo._oracle_geometric_phase(qc, ctrl[0], state, delta); apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
             qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
         return qc
 
-    # --- 8. VERIFIED (With 1D Oracle) ---
+    # --- 8. VERIFIED (FLAGS + FT) ---
     elif mode_id == 8:
-        ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
-        flag = QuantumRegister(1, "flag"); creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(ctrl, state, flag, creg)
+        n_flags = config.USE_FLAGS
+        ctrl, state, flags, c_meas, c_flags = QuantumRegister(1,"ctrl"), QuantumRegister(bits,"state"), QuantumRegister(n_flags,"flag"), ClassicalRegister(bits,"meas"), ClassicalRegister(bits*n_flags,"flag_out")
+        regs = [ctrl, state, flags, c_meas, c_flags]
+        if config.USE_FT: regs.append(ft_anc)
+        qc = QuantumCircuit(*regs)
         for k in range(bits):
-            if k>0: qc.reset(ctrl[0]); qc.reset(flag[0])
-            qc.h(ctrl[0])
-            qc.cx(ctrl[0], flag[0]) 
-            apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
+            if k > 0: qc.reset(ctrl[0])
+            qc.reset(flags); qc.h(ctrl[0])
+            
+            # FT: Prepare & Encode
+            if config.USE_FT: 
+                prepare_verified_ancilla(qc, ft_anc[0])
+                prepare_verified_ancilla(qc, ft_anc[1])
+                encode_repetition(qc, ctrl[0], ft_anc)
+            
+            for f in range(n_flags): qc.cx(ctrl[0], flags[f]) 
+            apply_semiclassical_qft_phase_component(qc, ctrl[0], c_meas, bits, k)
             draper_adder_oracle_1d_serial(qc, ctrl[0], state, (delta.x()*(1<<k))%N, 0)
-            qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k]); qc.measure(flag[0], creg[k])
+            for f in range(n_flags): qc.cx(ctrl[0], flags[f]) 
+            
+            # FT: Decode
+            if config.USE_FT: decode_repetition(qc, ft_anc, ctrl[0])
+            
+            qc.h(ctrl[0]); qc.measure(ctrl[0], c_meas[k])
+            qc.measure(flags, c_flags[k*n_flags : (k+1)*n_flags])
         return qc
 
-    # --- 9. Shadow 2D (Windowed Optimization) ---
+    # --- 9. SHADOW 2D ---
     elif mode_id == 9:
         window_size = 4
         ctrl = QuantumRegister(window_size, "ctrl")
@@ -446,114 +517,159 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
         
         for start in range(0, bits, window_size):
             chunk = min(window_size, bits - start)
-            
-            # Reset controls for new window
-            if start > 0:
-                qc.reset(ctrl[:chunk])
-            
-            # Superposition on active window controls
+            if start > 0: qc.reset(ctrl[:chunk])
             qc.h(ctrl[:chunk])
-            
-            # Apply oracle and phase feedback for each bit in window
             for j in range(chunk):
-                k = start + j
-                pwr = 1 << k
-                dx = (delta.x() * pwr) % N
-                dy = (delta.y() * pwr) % N
+                k = start + j; pwr = 1 << k
+                dx = (delta.x() * pwr) % N; dy = (delta.y() * pwr) % N
                 draper_2d_oracle(qc, ctrl[j], state, dx, dy)
-                
-                # Phase feedback from previous windows only
                 for m in range(start):
-                    angle = -math.pi / (2 ** (k - m))
+                    angle = -pi / (2 ** (k - m))
                     with qc.if_test((creg[m], 1)):
                         qc.p(angle, ctrl[j])
-            
-            # Inverse QFT on the window control register to extract phase bits
             qc.append(synth_qft_full(chunk, do_swaps=False).inverse(), ctrl[:chunk])
-            
-            # Measure the window
             qc.measure(ctrl[:chunk], creg[start:start + chunk])
-        
         return qc
 
     # --- 10. REVERSE IPE ---
     elif mode_id == 10:
-        ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
-        creg = ClassicalRegister(bits, "meas")
+        ctrl, state, creg = QuantumRegister(1), QuantumRegister(bits), ClassicalRegister(bits)
         qc = QuantumCircuit(ctrl, state, creg)
         for k in reversed(range(bits)):
             if k < bits-1: qc.reset(ctrl[0])
-            qc.h(ctrl[0])
-            pwr = 1<<k
-            draper_2d_oracle(qc, ctrl[0], state, (delta.x()*pwr)%N, (delta.y()*pwr)%N)
+            qc.h(ctrl[0]); draper_2d_oracle(qc, ctrl[0], state, (delta.x()*(1<<k))%N, (delta.y()*(1<<k))%N)
             qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
         return qc
 
-    # --- 11. SWARM (PARALLEL WORKERS) ---
+    # --- 11. SWARM ---
     elif mode_id == 11:
-        hive_size = (bits // 2 + 1) + 8
-        num_workers = 156 // hive_size # Assuming 156q default
-        if num_workers < 1: num_workers = 1
-        print(f"[Builder] Swarm: {num_workers} workers.")
+        workers = max(1, 156 // ((bits // 2 + 1) + 8))
         regs = []
-        for w in range(num_workers):
-            regs.append(QuantumRegister(4, f"c{w}"))
-            regs.append(QuantumRegister((bits//2+1), f"s{w}"))
-            regs.append(ClassicalRegister(bits, f"m{w}"))
+        for w in range(workers): regs.extend([QuantumRegister(4, f"c{w}"), QuantumRegister((bits//2+1), f"s{w}"), ClassicalRegister(bits, f"m{w}")])
         qc = QuantumCircuit(*regs)
-        window = 4
-        for w in range(num_workers):
-            q_ctrl = qc.qregs[w*2]; q_state = qc.qregs[w*2+1]; c_meas = qc.cregs[w]
+        for w in range(workers):
+            q_ctrl, q_state, c_meas = qc.qregs[w*2], qc.qregs[w*2+1], qc.cregs[w]
             for start in range(0, bits, window):
                 chunk = min(window, bits - start)
                 if start > 0: qc.reset(q_ctrl[:chunk])
                 qc.h(q_ctrl[:chunk])
                 for j in range(chunk):
-                    k = start + j; pwr = 1 << k
-                    draper_2d_oracle(qc, q_ctrl[j], q_state, (delta.x()*pwr)%N, 0)
+                    k = start + j; draper_2d_oracle(qc, q_ctrl[j], q_state, (delta.x()*(1<<k))%N, 0)
                     apply_semiclassical_qft_phase_component(qc, q_ctrl[j], c_meas, bits, k)
                 qc.measure(q_ctrl[:chunk], c_meas[start:start+chunk])
         return qc
 
-    # --- 12. Probe (Hardware Diagnostic) ---
+    # --- 12. HEAVY DRAPER ---
     elif mode_id == 12:
-        qr = QuantumRegister(2, "probe_q")
-        cr = ClassicalRegister(2, "probe_c")
-        qc = QuantumCircuit(qr, cr)
-        
-        # Create Bell state |00> + |11>
-        qc.h(qr[0])
-        qc.cx(qr[0], qr[1])
-        
-        # Measure both qubits
-        qc.measure(qr, cr)
-        
+        qc = QuantumCircuit(QuantumRegister(bits), QuantumRegister(bits), ClassicalRegister(bits))
+        ft_draper_modular_adder(qc, None, qc.qregs[0], [qc.qregs[1][0]], 12345, N)
+        qc.measure(qc.qregs[0], qc.cregs[0])
         return qc
 
-    # --- 19. FIXED AB (SEMICLASSICAL MODULAR) ---
-    elif mode_id == 19:
-        ctrl = QuantumRegister(1, "ctrl"); state = QuantumRegister(bits, "state")
-        anc = QuantumRegister(4, "anc"); creg = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(ctrl, state, anc, creg)
+    # --- 13. COMPRESSED SHADOW ---
+    elif mode_id == 13:
+        window_size = 8
+        ctrl = QuantumRegister(window_size, "ctrl")
+        state = QuantumRegister(bits, "state")
+        creg = ClassicalRegister(bits, "meas")
+        qc = QuantumCircuit(ctrl, state, creg)
+        for start in range(0, bits, window_size):
+            chunk = min(window_size, bits - start)
+            if start > 0: qc.reset(ctrl[:chunk])
+            qc.h(ctrl[:chunk])
+            for j in range(chunk):
+                k = start + j; draper_2d_oracle(qc, ctrl[j], state, (delta.x()*(1<<k))%N, 0)
+                for m in range(start):
+                    with qc.if_test((creg[m], 1)): qc.p(-pi / (2 ** (k - m)), ctrl[j])
+            qc.append(synth_qft_full(chunk, do_swaps=False).inverse(), ctrl[:chunk])
+            qc.measure(ctrl[:chunk], creg[start:start+chunk])
+        return qc
+
+    # --- 14. SHOR LOGIC ---
+    elif mode_id == 14:
+        block_size = min(bits, 5) 
+        ctrl, state, creg = QuantumRegister(block_size), QuantumRegister(bits), ClassicalRegister(block_size)
+        qc = QuantumCircuit(ctrl, state, creg)
+        qc.h(ctrl)
+        for i in range(block_size):
+             val = (delta.x() * (1<<i)) % N
+             draper_add_const(qc, ctrl[i], state, val)
+        qc.append(QFTGate(block_size, inverse=True), ctrl)
+        qc.measure(ctrl, creg)
+        return qc
+
+    # --- 15. GEOMETRIC IPE ---
+    elif mode_id == 15:
+        ctrl, state, creg = QuantumRegister(bits), QuantumRegister(bits), ClassicalRegister(bits)
+        qc = QuantumCircuit(ctrl, state, creg)
+        qc.h(ctrl)
+        geo = GeometricIPE(bits)
+        for k in range(bits):
+            geo._oracle_geometric_phase(qc, ctrl[k], state, ec_scalar_mult((1<<k), delta))
+        qc.append(QFTGate(bits, inverse=True), ctrl)
+        qc.measure(ctrl, creg)
+        return qc
+
+    # --- 16. WINDOWED EXPLICIT ---
+    elif mode_id == 16:
+        ctrl, state, creg = QuantumRegister(1), QuantumRegister(bits), ClassicalRegister(bits)
+        qc = QuantumCircuit(ctrl, state, creg)
         for k in range(bits):
             if k > 0: qc.reset(ctrl[0])
             qc.h(ctrl[0])
-            apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
-            val = (1 << k) % N
-            ft_draper_modular_adder(qc, ctrl[0], state, anc, val, N)
+            for m in range(k):
+                angle = -pi / (2**(k-m))
+                qc.cp(angle, creg[m], ctrl[0]) 
+            ipe_oracle_phase(qc, ctrl[0], state, delta, k, ORDER)
             qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
         return qc
 
-    # --- 20. MATRIX MOD (UNITARY) ---
-    elif mode_id == 20:
-        sim_bits = min(bits, 5)
-        reg = QuantumRegister(sim_bits, 'reg'); creg = ClassicalRegister(sim_bits, 'meas')
-        qc = QuantumCircuit(reg, creg)
-        gate = add_const_mod_gate(1, 2**sim_bits)
-        qc.append(gate, reg)
-        qc.measure(reg, creg)
+    # --- 17. HIVE SWARM ---
+    elif mode_id == 17:
+        total_q = 127; state_q = bits
+        workers = (total_q - state_q) // 1
+        regs = [QuantumRegister(state_q, "state")]
+        for w in range(workers): regs.append(QuantumRegister(1, f"w{w}")); regs.append(ClassicalRegister(1, f"c{w}"))
+        qc = QuantumCircuit(*regs)
+        state = qc.qregs[0]
+        for w in range(workers):
+            ctrl = qc.qregs[w+1]
+            qc.h(ctrl)
+            draper_2d_oracle(qc, ctrl[0], state, (delta.x()*(1<<w))%N, 0)
+            qc.h(ctrl); qc.measure(ctrl, qc.cregs[w])
         return qc
-        
+
+    # --- 18. EXPLICIT LOGIC ---
+    elif mode_id == 18:
+        ctrl, state, creg = QuantumRegister(1), QuantumRegister(bits), ClassicalRegister(bits)
+        qc = QuantumCircuit(ctrl, state, creg)
+        for k in range(bits):
+            if k > 0: 
+                with qc.if_test((creg[k-1], 1)): qc.x(ctrl[0])
+            qc.h(ctrl[0])
+            apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
+            ipe_oracle_phase(qc, ctrl[0], state, delta, k, ORDER)
+            qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
+        return qc
+
+    # --- 19. FIXED AB ---
+    elif mode_id == 19:
+        ctrl, state, anc, creg = QuantumRegister(1), QuantumRegister(bits), QuantumRegister(4), ClassicalRegister(bits)
+        qc = QuantumCircuit(ctrl, state, anc, creg)
+        for k in range(bits):
+            if k > 0: qc.reset(ctrl[0])
+            qc.h(ctrl[0]); apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
+            ft_draper_modular_adder(qc, ctrl[0], state, anc, (1<<k)%N, N)
+            qc.h(ctrl[0]); qc.measure(ctrl[0], creg[k])
+        return qc
+
+    # --- 20. MATRIX MOD (SMART) ---
+    elif mode_id == 20:
+        qc = QuantumCircuit(QuantumRegister(bits), ClassicalRegister(bits))
+        gate = add_const_mod_gate(1, 2**bits) # Smart scalable
+        qc.append(gate, qc.qregs[0]); qc.measure(qc.qregs[0], qc.cregs[0])
+        return qc
+    
     return build_circuit_selector(2, bits)
 
 # ==========================================
@@ -586,23 +702,37 @@ def configure_sampler_options(sampler):
     return sampler
 
 def safe_get_counts(result_item):
+    """
+    AGGRESSIVE RETRIEVAL (Reflection + Legacy)
+    Scans every attribute for data.
+    """
+    combined_counts = defaultdict(int)
+    data_found = False
+
+    # 1. Reflection (Modern SamplerV2)
+    if hasattr(result_item, 'data'):
+        data_bin = result_item.data
+        for attr_name in [a for a in dir(data_bin) if not a.startswith("_")]:
+            val = getattr(data_bin, attr_name)
+            if hasattr(val, 'get_counts'):
+                try:
+                    c = val.get_counts()
+                    for k,v in c.items(): combined_counts[k] += v
+                    data_found = True
+                except: pass
+    if data_found: return dict(combined_counts)
+
+    # 2. Legacy Fallbacks
     attempts = [
         lambda: result_item.data.meas.get_counts(),
         lambda: result_item.data.c.get_counts(),
         lambda: result_item.data.meas_bits.get_counts(),
         lambda: result_item.data.meas_state.get_counts(),
+        lambda: result_item.data.c_meas.get_counts(),
+        lambda: result_item.data.probe_c.get_counts(),
+        lambda: result_item.data.flag_out.get_counts(),
+        lambda: result_item.data.m0.get_counts(),
     ]
-    try:
-        if hasattr(result_item, 'data'):
-            all_c = defaultdict(int)
-            found = False
-            for attr in dir(result_item.data):
-                if attr.startswith('m') and attr[1:].isdigit():
-                    c = getattr(result_item.data, attr).get_counts()
-                    for k,v in c.items(): all_c[k]+=v
-                    found = True
-            if found: return all_c
-    except: pass
     for attempt in attempts:
         try: return attempt()
         except: continue
@@ -616,26 +746,21 @@ def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
         scaled_qc = qc.copy()
         if scale > 1:
             for _ in range(scale - 1):
-                scaled_qc.barrier()
-                for q in scaled_qc.qubits: scaled_qc.id(q) 
-        isa_qc = pm.run(scaled_qc)
-        final_qc = transpile(isa_qc, backend=backend, optimization_level=3, scheduling_method='alap', routing_method='sabre')
+                scaled_qc.barrier(); [sqc.id(q) for q in sqc.qubits]
+        tqc = pm.run(sqc)
         sampler = Sampler(mode=backend)
         sampler = configure_sampler_options(sampler)
-        if config.USE_MANUAL_ZNE: sampler.options.resilience_level = 0
-        job = sampler.run([final_qc], shots=shots)
+        sampler.options.resilience_level = 0 # Raw for ZNE
+        job = sampler.run([tqc], shots=shots)
         result = job.result()
         cnt = safe_get_counts(result[0])
         if cnt: counts_list.append(cnt)
+        
     if not counts_list: return defaultdict(float)
     extrapolated = defaultdict(float)
-    keys = set().union(*counts_list)
-    for meas in keys:
-        vals = [c.get(meas, 0) for c in counts_list]
-        if len(vals) > 1:
-            fit = np.polyfit(scales[:len(vals)], vals, 1) 
-            extrapolated[meas] = max(0, fit[1]) 
-        else: extrapolated[meas] = vals[0]
+    for k in set().union(*counts_list):
+        vals = [c.get(k, 0) for c in counts_list]
+        extrapolated[k] = max(0, np.polyfit(scales[:len(vals)], vals, 1)[1] if len(vals)>1 else vals[0])
     return extrapolated
 
 def plot_visuals(counts, bits, order=N, k_target=None):
@@ -691,7 +816,10 @@ def hybrid_post_process(counts, bits, order=N, start=config.KEYSPACE_START, qx=N
                 k = (-a * inv_b) % order
                 if ec_scalar_mult(k, G)[0] == qx: save_key(k); return k
         else:
-            measurements = [int(bit) for bit in meas_str[::-1]]
+            measurements = [int(bit) for bit in meas_str if bit in '01']
+            if len(measurements) >= bits: measurements = measurements[:bits]
+            measurements = measurements[::-1] 
+            
             phi = sum([b * (1 / 2**(i+1)) for i, b in enumerate(measurements)])
             num, den = continued_fractions_approx(int(phi * 2**bits), 2**bits, order)
             d = (num * modular_inverse_verbose(den, order)) % order if den and gcd_verbose(den, order) == 1 else None
@@ -701,28 +829,40 @@ def hybrid_post_process(counts, bits, order=N, start=config.KEYSPACE_START, qx=N
     return None
 
 def run_best_solver():
+    config.user_menu()
+    
     try: service = QiskitRuntimeService()
     except: service = QiskitRuntimeService(channel="ibm_cloud", token=config.TOKEN, instance=config.CRN)
-    backend = service.backend(config.BACKEND)
     
+    try: backend = service.backend(config.BACKEND)
+    except: 
+        logger.warning("Backend not found, using simulator.")
+        from qiskit.providers.basic_provider import BasicSimulator
+        backend = BasicSimulator()
+
+    # --- CLASSICAL CHECK ---
+    logger.info("Running classical pre-check (100k window)...")
+    class_hits = precompute_good_indices_range(config.KEYSPACE_START, config.KEYSPACE_START + 100000, decompress_pubkey(config.COMPRESSED_PUBKEY_HEX).x())
+    if class_hits: 
+        key = config.KEYSPACE_START + class_hits[0]
+        logger.info(f"FOUND CLASSICALLY: {hex(key)}")
+        save_key(key)
+        return key
+
     if config.METHOD == 'smart':
         mode_id = get_best_mode_id(config.BITS, backend.num_qubits)
     else:
-        m_map = {'ipe':1, 'hive':2, 'windowed':3, 'semi':4, 'ab':5, 'ft_test':6, 
-                 'geo':7, 'ver':8, 'shadow':9, 'rev':10, 'swarm':11, 'probe':12,
-                 'fixed_ab':19, 'matrix_mod':20}
-        mode_id = m_map.get(config.METHOD, 2)
+        mode_id = int(config.METHOD)
     
-    logger.info(f"Target BITS={config.BITS}. Hardware={backend.num_qubits}q.")
-    logger.info(f"Selected Mode ID: {mode_id}")
+    logger.info(f"Target BITS={config.BITS}. Hardware={backend.name}.")
+    logger.info(f"Selected Mode ID: {mode_id} (Flags={config.USE_FLAGS} | FT={config.USE_FT})")
     
     qc = build_circuit_selector(mode_id, config.BITS)
     gate_counts = estimate_gate_counts(qc)
-    print(f"Est Gates: {gate_counts}")
     
-    if qc.num_qubits > backend.num_qubits:
-        logger.warning(f"CRITICAL: Circuit needs {qc.num_qubits} qubits.")
-    
+    if hasattr(backend, 'num_qubits') and qc.num_qubits > backend.num_qubits:
+         logger.warning(f"CRITICAL: Circuit needs {qc.num_qubits} qubits, backend has {backend.num_qubits}.")
+
     counts = {}
     Q = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
     
@@ -750,3 +890,4 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+ 
