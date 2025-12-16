@@ -861,6 +861,7 @@ def plot_visuals(counts, bits, order=N, k_target=None):
 # 6. POST PROCESSING & MAIN EXECUTION
 # ==========================================
 
+
 def save_key(k: int):
     hex_k = hex(k)[2:].zfill(64)
     padded_hex = '0x' + hex_k.zfill(64)
@@ -922,6 +923,40 @@ def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, m
         logger.error(f"Retrieval failed: {e}")
         return None
 
+def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, method):
+    try:
+        job = service.job(job_id)
+        while job.status().name not in ["DONE", "QUEUED", "COMPLETED", "ERROR", "CANCELLED"]:
+            logger.info(f"Status: {job.status().name}...")
+            time.sleep(60)
+            
+        if job.status().name == "ERROR":
+            logger.error("Job failed on backend.")
+            return None
+            
+        job_result = job.result()
+        counts = safe_get_counts(job_result[0])
+        
+        # --- POST-QUANTUM WINDOW SCAN ---
+        if counts:
+            top_meas = max(counts, key=counts.get)
+            clean_meas = top_meas.replace(" ", "")
+            clean_meas = "".join([b for b in clean_meas if b in '01'])
+            if clean_meas:
+                measured_int = int(clean_meas, 2)
+                logger.info(f"[Extra Check] Scanning window around measurement: {hex(measured_int)}")
+                hits = precompute_good_indices_range(measured_int, measured_int + 10000, target_pub_x)
+                if hits:
+                    final_key = measured_int + hits[0]
+                    logger.info(f"FOUND VIA POST-QUANTUM CHECK: {hex(final_key)}")
+                    save_key(final_key)
+                    return final_key
+
+        return hybrid_post_process(counts, n_bits, ORDER, start_val, target_pub_x, method)
+    except Exception as e:
+        logger.error(f"Retrieval failed: {e}")
+        return None
+     
 def hybrid_post_process(counts, bits, order, start, target_pub_x, method):
     sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:100]
     for meas_str, freq in sorted_counts:
@@ -959,28 +994,23 @@ def hybrid_post_process(counts, bits, order, start, target_pub_x, method):
 def run_best_solver():
     config.user_menu()
     
-    # 1. Connect to Real Backend
     print("[i] Connecting to IBM Quantum Runtime...")
     try: 
         service = QiskitRuntimeService()
     except: 
         service = QiskitRuntimeService(channel="ibm_cloud", token=config.TOKEN, instance=config.CRN)
     
-    # Force Real Backend
-    backend = service.least_busy(simulator=False, operational=True, min_num_qubits=127)
+    try:
+        backend = service.least_busy(simulator=False, operational=True, min_num_qubits=127)
+    except Exception as e:
+        logger.error(f"Could not find available real backend: {e}")
+        return None
+
     print(f"[i] Selected Real Backend: {backend.name}")
 
-    # 2. Classical Pre-Check
-    logger.info("Running classical pre-check (100k window)...")
+    # No Initial Pre-Check (Moved to Post-Process)
     target_pub = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
-    class_hits = precompute_good_indices_range(config.KEYSPACE_START, config.KEYSPACE_START + 100000, target_pub.x())
-    if class_hits: 
-        key = config.KEYSPACE_START + class_hits[0]
-        logger.info(f"FOUND CLASSICALLY: {hex(key)}")
-        save_key(key)
-        return key
 
-    # 3. Build Circuit
     if config.METHOD == 'smart':
         mode_id = get_best_mode_id(config.BITS, backend.num_qubits)
     else:
@@ -989,10 +1019,8 @@ def run_best_solver():
     logger.info(f"Target BITS={config.BITS} | Hardware={backend.name} | Mode={mode_id}")
     qc = build_circuit_selector(mode_id, config.BITS)
     
-    # 4. Analyze & Warn
     analyze_circuit_costs(qc, backend)
 
-    # 5. Execution
     counts = {}
     
     if config.USE_MANUAL_ZNE:
@@ -1002,8 +1030,7 @@ def run_best_solver():
         logger.info(">>> STANDARD RUN ENABLED <<<")
         
         print(f"[i] Transpiling circuit (ALAP/Sabre)...")
-        
-        # SINGLE ROBUST TRANSPILE (NO PassManager)
+        # Direct Transpile (No PassManager)
         transpiled_qc = transpile(qc, backend=backend, optimization_level=config.OPT_LEVEL, 
                                   scheduling_method='alap', routing_method='sabre')
         
@@ -1019,24 +1046,19 @@ def run_best_solver():
         print("[i] Waiting for results...")
         
         try:
+            k = retrieve_and_process_job(job.job_id(), service, config.BITS, config.KEYSPACE_START, target_pub.x(), 'ab' if mode_id==5 else 'phase')
+            if k: return k
             job_result = job.result()
             counts = safe_get_counts(job_result[0])
         except Exception as e:
             logger.error(f"Job Execution Failed: {e}")
             return None
 
-    # 6. Result Processing
     k = hybrid_post_process(counts, config.BITS, N, config.KEYSPACE_START, target_pub.x(), 'ab' if mode_id==5 else 'phase')
-    
-    if k: 
-        logger.info(f"RECOVERED PRIVATE KEY: {hex(k)}")
-    else:
-        logger.warning("Key not found in top candidates. Try increasing shots or ZNE scales.")
-        
+    if k: logger.info(f"RECOVERED PRIVATE KEY: {hex(k)}")
+    else: logger.warning("Key not found in top candidates. Try increasing shots or ZNE scales.")
     plot_visuals(counts, config.BITS, N, k)
     return k
 
 if __name__ == "__main__":
     run_best_solver()
-
-
