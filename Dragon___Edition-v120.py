@@ -29,38 +29,66 @@ MITIGATION: Manual ZNE, TREX, Twirling, DD (XY4).
 """
 
 from IPython.display import display
+from qiskit import synthesis
 from qiskit.synthesis import synth_qft_full
-from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+from qiskit.primitives.containers.primitive_result import PrimitiveResult
+from qiskit.circuit.controlflow.break_loop import BreakLoopPlaceholder
 from collections import defaultdict
 from fractions import Fraction
-import numpy as np
-import time
-import os
-import logging
-import math
+from collections import Counter
 import matplotlib.pyplot as plt
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
-from qiskit.visualization import plot_histogram
+from Crypto.Hash import RIPEMD160, SHA256  # Import from pycryptodome
+from ecdsa import SigningKey, SECP256k1
 from qiskit.circuit import UnitaryGate, Gate
-from qiskit.circuit.library import QFTGate, HGate, CXGate, CCXGate
+from qiskit.circuit.library import ZGate, MCXGate, RYGate,, QFTGate
+from qiskit.circuit.library import QFT, HGate, CXGate, CCXGate
+import math
 from math import gcd, pi, ceil, log2
 from typing import Optional, List, Dict
+from qiskit.circuit import Parameter
+from Crypto.PublicKey import ECC
 import pickle
+import hashlib
+import base58
 from ecdsa.ellipticcurve import Point, CurveFp
 from ecdsa import numbertheory
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import numpy as np
+import hashlib
+import base58
+import pandas as pd
+import logging
+from qiskit_ibm_runtime import Estimator, QiskitRuntimeService, Options, SamplerV2 as Sampler
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
+from qiskit.visualization import plot_histogram, plot_distribution
+from math import gcd, ceil, log2
+from typing import Optional, Tuple, List, Dict
+import pickle, os, time
+try:
+    # optional DraperQFTAdder
+    from qiskit.circuit.library import DraperQFTAdder
+except Exception:
+    DraperQFTAdder = None
 
 # ==========================================
 # 1. CONFIGURATION
-# ==========================================
-
+# ---------------- Logging ----------------
 CACHE_DIR = "cache/"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
+# ---------------- CONFIG ----------------
+# Save IBM Quantum account (replace token and instance with your own)
+api_token = "API_TOKEN"
+QiskitRuntimeService.save_account(channel="ibm_cloud", token=api_token, overwrite=True)
 
+# 1. Get a FRESH authentication token
+service = QiskitRuntimeService(
+    instance="<CRN>"
+)
+# ==========================================
 # secp256k1 Constants
 P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
 A = 0
@@ -673,39 +701,60 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
     return build_circuit_selector(2, bits)
 
 # ==========================================
-# 5. MITIGATION & VISUALS
+# 5.  EXECUTION MTIGATION ENGINE & VISUALS
 # ==========================================
 
 def estimate_gate_counts(qc):
-    counts = {"CX":0, "CCX":0, "T":0}
-    for inst in qc.data:
-        name = inst.operation.name.upper()
-        if name in counts: counts[name] += 1
-        if name == "TDG": counts["T"] += 1
-    logger.info(f"Gate Estimation: {counts}")
+    """Counts CX, CCX, and T gates for cost estimation."""
+    counts = {"CX": 0, "CCX": 0, "T": 0}
+    for instruction in qc.data:
+        name = instruction.operation.name.upper()
+        if name in counts:
+            counts[name] += 1
+        if name == "TDG":
+            counts["T"] += 1
     return counts
 
+def analyze_circuit_costs(qc, backend):
+    """Prints detailed circuit statistics before execution."""
+    total_qubits = qc.num_qubits
+    gate_counts = estimate_gate_counts(qc)
+    
+    print("\n" + "="*40)
+    print("   CIRCUIT ANALYSIS")
+    print("="*40)
+    print(f"[i] Logical Qubits: {total_qubits}")
+    print(f"[i] Logical Depth:  {qc.depth()}")
+    print(f"[i] Gate Estimate:  CX={gate_counts['CX']}, CCX={gate_counts['CCX']}, T={gate_counts['T']}")
+    
+    backend_qubits = backend.configuration().n_qubits if hasattr(backend, 'configuration') else 127
+    if total_qubits > backend_qubits:
+        logger.warning(f"⚠️  CRITICAL: Circuit ({total_qubits}q) exceeds backend {backend.name} ({backend_qubits}q)!")
+    elif total_qubits > 156:
+        logger.warning(f"⚠️  High Qubit Count ({total_qubits}). Execution may be unstable.")
+    else:
+        print(f"[i] Circuit fits within {backend.name} ({backend_qubits}q).")
+    print("-" * 40 + "\n")
+
 def configure_sampler_options(sampler):
+    """Applies DRAGON mitigation settings."""
     if config.USE_DD:
         try:
             sampler.options.dynamical_decoupling.enable = True
             sampler.options.dynamical_decoupling.sequence_type = config.DD_SEQUENCE
         except: pass
     if config.USE_MEM:
-        try: sampler.options.twirling.enable_measure = True
+        try:
+            sampler.options.twirling.enable_measure = True
+            sampler.options.measure_mitigation = True
+            sampler.options.trex = True
         except: pass
-        try: sampler.options.measure_mitigation = True
-        except: pass
-        try: sampler.options.trex = True
-        except: pass
+    
     sampler.options.resilience_level = config.INTERNAL_RESILIENCE_LEVEL
     return sampler
 
 def safe_get_counts(result_item):
-    """
-    AGGRESSIVE RETRIEVAL (Reflection + Legacy)
-    Scans every attribute for data.
-    """
+    """Universal Retrieval (Reflection + Legacy)."""
     combined_counts = defaultdict(int)
     data_found = False
 
@@ -731,7 +780,7 @@ def safe_get_counts(result_item):
         lambda: result_item.data.c_meas.get_counts(),
         lambda: result_item.data.probe_c.get_counts(),
         lambda: result_item.data.flag_out.get_counts(),
-        lambda: result_item.data.m0.get_counts(),
+        lambda: result_item.data.m0.get_counts()
     ]
     for attempt in attempts:
         try: return attempt()
@@ -741,29 +790,53 @@ def safe_get_counts(result_item):
 def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
     logger.info(f"Running Manual ZNE (Scales: {scales})...")
     counts_list = []
+    
+    # Use PassManager for initial mapping
     pm = generate_preset_pass_manager(backend=backend, optimization_level=config.OPT_LEVEL)
+    
     for scale in scales:
         scaled_qc = qc.copy()
+        
+        # Folding (Noise Amplification)
         if scale > 1:
             for _ in range(scale - 1):
-                scaled_qc.barrier(); [sqc.id(q) for q in sqc.qubits]
+                scaled_qc.barrier()
+                for q in scaled_qc.qubits: scaled_qc.id(q)
         
-        # Single efficient transpilation with ALAP
-        tqc = transpile(pm.run(scaled_qc), backend=backend, optimization_level=3, scheduling_method='alap', routing_method='sabre')
+        print(f"[i] Transpiling Scale {scale} (ALAP/Sabre)...")
+        # Direct Transpile for ZNE to ensure scheduling holds
+        tqc = transpile(pm.run(scaled_qc), backend=backend, optimization_level=3, 
+                        scheduling_method='alap', routing_method='sabre')
         
-        sampler = Sampler(mode=backend)
+        print(f"[i] Scale {scale} Depth: {tqc.depth()}")
+        
+        sampler = Sampler(backend)
         sampler = configure_sampler_options(sampler)
-        sampler.options.resilience_level = 0 # Raw for ZNE
+        sampler.options.resilience_level = 0 # Force Raw for ZNE calculation
+        
         job = sampler.run([tqc], shots=shots)
-        result = job.result()
-        cnt = safe_get_counts(result[0])
-        if cnt: counts_list.append(cnt)
+        print(f"[i] Job Submitted. ID: {job.job_id()}")
+        
+        try:
+            res = job.result()
+            cnt = safe_get_counts(res[0])
+            if cnt: counts_list.append(cnt)
+        except Exception as e:
+            logger.error(f"ZNE Scale {scale} failed: {e}")
         
     if not counts_list: return defaultdict(float)
+    
+    # Linear Extrapolation
     extrapolated = defaultdict(float)
-    for k in set().union(*counts_list):
+    keys = set().union(*counts_list)
+    for k in keys:
         vals = [c.get(k, 0) for c in counts_list]
-        extrapolated[k] = max(0, np.polyfit(scales[:len(vals)], vals, 1)[1] if len(vals)>1 else vals[0])
+        if len(vals) > 1:
+            fit = np.polyfit(scales[:len(vals)], vals, 1)
+            extrapolated[k] = max(0, fit[1]) # Intercept at noise=0
+        else:
+            extrapolated[k] = vals[0]
+            
     return extrapolated
 
 def plot_visuals(counts, bits, order=N, k_target=None):
@@ -771,6 +844,7 @@ def plot_visuals(counts, bits, order=N, k_target=None):
         logger.info("Plotting Histogram.")
         plot_histogram(counts)
         plt.show(); return
+    
     grid = 256
     heat = np.zeros((grid, grid), dtype=int)
     for bitstr, cnt in counts.items():
@@ -780,13 +854,15 @@ def plot_visuals(counts, bits, order=N, k_target=None):
             b = val % grid
             heat[a, b] += cnt
         except: continue
-    plt.figure(figsize=(6,6)); plt.title('Heatmap'); plt.imshow(heat, cmap='viridis', origin='lower'); plt.colorbar(); plt.show()
-    fig = plt.figure(figsize=(7,5)); ax = fig.add_subplot(111, projection='3d')
-    A, B = np.meshgrid(np.arange(grid), np.arange(grid))
-    ax.plot_surface(B, A, heat, cmap='viridis'); plt.show()
+        
+    plt.figure(figsize=(6,6))
+    plt.title('Heatmap')
+    plt.imshow(heat, cmap='viridis', origin='lower')
+    plt.colorbar()
+    plt.show()
 
 # ==========================================
-# 7. POST PROCESSING & RUNNER
+# 6. POST PROCESSING & MAIN EXECUTION
 # ==========================================
 
 def save_key(k: int):
@@ -796,28 +872,44 @@ def save_key(k: int):
     shifted_hex = '0x' + zero_padded[32:] + zero_padded[:32]
     with open("boom.txt", "a") as f:
         f.write(f"{padded_hex}\n{zero_padded}\n{shifted_hex}\n")
-    logger.info(f"Saved key formats to boom.txt")
+    logger.info(f"KEY SAVED: boom.txt")
 
 def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, method):
-    job = service.job(job_id)
-    while job.status().name not in ["DONE", "COMPLETED"]:
-        logger.info(f"Waiting... Status: {job.status().name}")
-        time.sleep(60)
-    result = job.result()
-    counts = safe_get_counts(result[0])
-    return hybrid_post_process(counts, n_bits, ORDER, start_val, target_pub_x, method)
+    try:
+        job = service.job(job_id)
+        while job.status().name not in ["DONE", "COMPLETED", "ERROR", "CANCELLED"]:
+            logger.info(f"Status: {job.status().name}...")
+            time.sleep(60)
+            
+        if job.status().name == "ERROR":
+            logger.error("Job failed on backend.")
+            return None
+            
+        result = job.result()
+        counts = safe_get_counts(result[0])
+        return hybrid_post_process(counts, n_bits, ORDER, start_val, target_pub_x, method)
+    except Exception as e:
+        logger.error(f"Retrieval failed: {e}")
+        return None
 
-def hybrid_post_process(counts, bits, order=N, start=config.KEYSPACE_START, qx=None, method='phase'):
+def hybrid_post_process(counts, bits, order, start, target_pub_x, method):
     sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:100]
     for meas_str, freq in sorted_counts:
         meas_str = meas_str.replace(" ", "")
+        
+        # --- SHOR (AB) MODE ---
         if method == 'ab' or method == 5:
             mid = len(meas_str) // 2
-            a = int(meas_str[:mid], 2); b = int(meas_str[mid:], 2)
+            a = int(meas_str[:mid], 2)
+            b = int(meas_str[mid:], 2)
             if gcd_verbose(b, order) == 1:
                 inv_b = modular_inverse_verbose(b, order)
                 k = (-a * inv_b) % order
-                if ec_scalar_mult(k, G)[0] == qx: save_key(k); return k
+                if ec_scalar_mult(k, G).x() == target_pub_x:
+                    save_key(k)
+                    return k
+        
+        # --- IPE / PHASE MODES ---
         else:
             measurements = [int(bit) for bit in meas_str if bit in '01']
             if len(measurements) >= bits: measurements = measurements[:bits]
@@ -826,68 +918,92 @@ def hybrid_post_process(counts, bits, order=N, start=config.KEYSPACE_START, qx=N
             phi = sum([b * (1 / 2**(i+1)) for i, b in enumerate(measurements)])
             num, den = continued_fractions_approx(int(phi * 2**bits), 2**bits, order)
             d = (num * modular_inverse_verbose(den, order)) % order if den and gcd_verbose(den, order) == 1 else None
+            
             if d:
                 cand = (start + d) % N
-                if ec_scalar_mult(cand, G)[0] == qx: save_key(cand); return cand
+                if ec_scalar_mult(cand, G).x() == target_pub_x:
+                    save_key(cand)
+                    return cand
     return None
 
 def run_best_solver():
     config.user_menu()
     
-    try: service = QiskitRuntimeService()
-    except: service = QiskitRuntimeService(channel="ibm_cloud", token=config.TOKEN, instance=config.CRN)
-    
-    try: backend = service.backend(config.BACKEND)
+    # 1. Connect to Real Backend
+    print("[i] Connecting to IBM Quantum Runtime...")
+    try: 
+        service = QiskitRuntimeService()
     except: 
-        logger.warning("Backend not found, using simulator.")
-        from qiskit.providers.basic_provider import BasicSimulator
-        backend = BasicSimulator()
+        service = QiskitRuntimeService(channel="ibm_cloud", token=config.TOKEN, instance=config.CRN)
+    
+    # Force Real Backend (No Simulator)
+    backend = service.least_busy(simulator=False, operational=True, min_num_qubits=156)
+    print(f"[i] Selected Real Backend: {backend.name}")
 
-    # --- CLASSICAL CHECK ---
+    # 2. Classical Pre-Check
     logger.info("Running classical pre-check (100k window)...")
-    class_hits = precompute_good_indices_range(config.KEYSPACE_START, config.KEYSPACE_START + 100000, decompress_pubkey(config.COMPRESSED_PUBKEY_HEX).x())
+    target_pub = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
+    class_hits = precompute_good_indices_range(config.KEYSPACE_START, config.KEYSPACE_START + 100000, target_pub.x())
     if class_hits: 
         key = config.KEYSPACE_START + class_hits[0]
         logger.info(f"FOUND CLASSICALLY: {hex(key)}")
         save_key(key)
         return key
 
+    # 3. Build Circuit
     if config.METHOD == 'smart':
         mode_id = get_best_mode_id(config.BITS, backend.num_qubits)
     else:
         mode_id = int(config.METHOD)
     
-    logger.info(f"Target BITS={config.BITS}. Hardware={backend.name}.")
-    logger.info(f"Selected Mode ID: {mode_id} (Flags={config.USE_FLAGS} | FT={config.USE_FT})")
-    
+    logger.info(f"Target BITS={config.BITS} | Hardware={backend.name} | Mode={mode_id}")
     qc = build_circuit_selector(mode_id, config.BITS)
-    gate_counts = estimate_gate_counts(qc)
     
-    if hasattr(backend, 'num_qubits') and qc.num_qubits > backend.num_qubits:
-         logger.warning(f"CRITICAL: Circuit needs {qc.num_qubits} qubits, backend has {backend.num_qubits}.")
+    # 4. Analyze & Warn
+    analyze_circuit_costs(qc, backend)
 
+    # 5. Execution
     counts = {}
-    Q = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
     
     if config.USE_MANUAL_ZNE:
         logger.info(">>> MANUAL ZNE ENABLED <<<")
         counts = manual_zne(qc, backend, config.SHOTS)
     else:
         logger.info(">>> STANDARD RUN ENABLED <<<")
+        
+        print(f"[i] Transpiling circuit (ALAP/Sabre)...")
         pm = generate_preset_pass_manager(backend=backend, optimization_level=config.OPT_LEVEL)
-        isa_qc = pm.run(qc)
-        final_qc = transpile(isa_qc, backend=backend, optimization_level=3, scheduling_method='alap', routing_method='sabre')
-        sampler = Sampler(mode=backend)
+        
+        # Single Robust Transpile
+        transpiled_qc = transpile(pm.run(qc), backend=backend, optimization_level=3, 
+                                  scheduling_method='alap', routing_method='sabre')
+        
+        print(f"[i] Transpiled Circuit Depth: {transpiled_qc.depth()}")
+        print(f"[i] Transpiled Circuit Size: {transpiled_qc.size()}")
+        
+        sampler = Sampler(backend)
         sampler = configure_sampler_options(sampler)
-        job = sampler.run([final_qc], shots=config.SHOTS)
-        logger.info(f"Job submitted: {job.job_id()}")
-        k = retrieve_and_process_job(job.job_id(), service, config.BITS, config.KEYSPACE_START, Q.x(), 'ab' if mode_id==5 else 'phase')
-        if k: return k
-        try: counts = safe_get_counts(job.result()[0])
-        except: counts = {}
+        
+        print(f"[i] Submitting Job with {config.SHOTS} shots...")
+        job = sampler.run([transpiled_qc], shots=config.SHOTS)
+        print(f"[i] Job Submitted. ID: {job.job_id()}")
+        print("[i] Waiting for results...")
+        
+        try:
+            job_result = job.result()
+            counts = safe_get_counts(job_result[0])
+        except Exception as e:
+            logger.error(f"Job Execution Failed: {e}")
+            return None
 
-    k = hybrid_post_process(counts, config.BITS, N, config.KEYSPACE_START, Q.x(), 'ab' if mode_id==5 else 'phase')
-    if k: logger.info(f"Recovered Key: {hex(k)}")
+    # 6. Result Processing
+    k = hybrid_post_process(counts, config.BITS, N, config.KEYSPACE_START, target_pub.x(), 'ab' if mode_id==5 else 'phase')
+    
+    if k: 
+        logger.info(f"RECOVERED PRIVATE KEY: {hex(k)}")
+    else:
+        logger.warning("Key not found in top candidates. Try increasing shots or ZNE scales.")
+        
     plot_visuals(counts, config.BITS, N, k)
     return k
 
