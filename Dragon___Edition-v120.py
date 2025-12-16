@@ -33,10 +33,8 @@ from qiskit import synthesis
 from qiskit.synthesis import synth_qft_full
 from qiskit.primitives.containers.primitive_result import PrimitiveResult
 from qiskit.circuit.controlflow.break_loop import BreakLoopPlaceholder
-from collections import defaultdict
 from fractions import Fraction
-from collections import Counter
-import matplotlib.pyplot as plt
+from collections import Counter, defaultdict
 from Crypto.Hash import RIPEMD160, SHA256  # Import from pycryptodome
 from ecdsa import SigningKey, SECP256k1
 from qiskit.circuit import UnitaryGate, Gate
@@ -47,8 +45,8 @@ from qiskit.circuit import Parameter
 from Crypto.PublicKey import ECC
 from ecdsa.ellipticcurve import Point, CurveFp
 from ecdsa import numbertheory
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import math
 import numpy as np
 import hashlib
@@ -700,8 +698,9 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
 # 5.  EXECUTION MTIGATION ENGINE & VISUALS
 # ==========================================
 
+
 def estimate_gate_counts(qc):
-    """Counts CX, CCX, and T gates for cost estimation."""
+    """Counts specific expensive gates."""
     counts = {"CX": 0, "CCX": 0, "T": 0}
     for instruction in qc.data:
         name = instruction.operation.name.upper()
@@ -723,7 +722,9 @@ def analyze_circuit_costs(qc, backend):
     print(f"[i] Logical Depth:  {qc.depth()}")
     print(f"[i] Gate Estimate:  CX={gate_counts['CX']}, CCX={gate_counts['CCX']}, T={gate_counts['T']}")
     
+    # Check backend capacity
     backend_qubits = backend.configuration().n_qubits if hasattr(backend, 'configuration') else 127
+    
     if total_qubits > backend_qubits:
         logger.warning(f"⚠️  CRITICAL: Circuit ({total_qubits}q) exceeds backend {backend.name} ({backend_qubits}q)!")
     elif total_qubits > 156:
@@ -750,11 +751,11 @@ def configure_sampler_options(sampler):
     return sampler
 
 def safe_get_counts(result_item):
-    """Universal Retrieval (Reflection + Legacy)."""
+    """Aggressive Universal Retrieval."""
     combined_counts = defaultdict(int)
     data_found = False
 
-    # 1. Reflection (Modern SamplerV2)
+    # 1. Reflection
     if hasattr(result_item, 'data'):
         data_bin = result_item.data
         for attr_name in [a for a in dir(data_bin) if not a.startswith("_")]:
@@ -762,9 +763,10 @@ def safe_get_counts(result_item):
             if hasattr(val, 'get_counts'):
                 try:
                     c = val.get_counts()
-                    for k,v in c.items(): combined_counts[k] += v
+                    for k, v in c.items(): combined_counts[k] += v
                     data_found = True
                 except: pass
+    
     if data_found: return dict(combined_counts)
 
     # 2. Legacy Fallbacks
@@ -787,9 +789,6 @@ def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
     logger.info(f"Running Manual ZNE (Scales: {scales})...")
     counts_list = []
     
-    # Use PassManager for initial mapping
-    pm = generate_preset_pass_manager(backend=backend, optimization_level=config.OPT_LEVEL)
-    
     for scale in scales:
         scaled_qc = qc.copy()
         
@@ -800,23 +799,24 @@ def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
                 for q in scaled_qc.qubits: scaled_qc.id(q)
         
         print(f"[i] Transpiling Scale {scale} (ALAP/Sabre)...")
-        # Direct Transpile for ZNE to ensure scheduling holds
-        tqc = transpile(pm.run(scaled_qc), backend=backend, optimization_level=3, 
-                        scheduling_method='alap', routing_method='sabre')
         
-        print(f"[i] Scale {scale} Depth: {tqc.depth()}")
+        # SINGLE ROBUST TRANSPILE (Replaces PassManager conflict)
+        transpiled_qc = transpile(scaled_qc, backend=backend, optimization_level=3, 
+                                  scheduling_method='alap', routing_method='sabre')
         
-        sampler = Sampler(backend)
+        print(f"[i] Scale {scale} -> Depth: {transpiled_qc.depth()}, Size: {transpiled_qc.size()}")
+        
+        sampler = Sampler(mode=backend)
         sampler = configure_sampler_options(sampler)
-        sampler.options.resilience_level = 0 # Force Raw for ZNE calculation
+        sampler.options.resilience_level = 0 # Force Raw for ZNE
         
-        job = sampler.run([tqc], shots=shots)
-        print(f"[i] Job Submitted. ID: {job.job_id()}")
+        job = sampler.run([transpiled_qc], shots=shots)
+        print(f"[i] ZNE Scale {scale} Job ID: {job.job_id()}")
         
         try:
-            res = job.result()
-            cnt = safe_get_counts(res[0])
-            if cnt: counts_list.append(cnt)
+            job_result = job.result()
+            counts = safe_get_counts(job_result[0])
+            if counts: counts_list.append(counts)
         except Exception as e:
             logger.error(f"ZNE Scale {scale} failed: {e}")
         
@@ -829,7 +829,7 @@ def manual_zne(qc, backend, shots, scales=[1, 3, 5]):
         vals = [c.get(k, 0) for c in counts_list]
         if len(vals) > 1:
             fit = np.polyfit(scales[:len(vals)], vals, 1)
-            extrapolated[k] = max(0, fit[1]) # Intercept at noise=0
+            extrapolated[k] = max(0, fit[1]) 
         else:
             extrapolated[k] = vals[0]
             
@@ -856,7 +856,7 @@ def plot_visuals(counts, bits, order=N, k_target=None):
     plt.imshow(heat, cmap='viridis', origin='lower')
     plt.colorbar()
     plt.show()
-
+ 
 # ==========================================
 # 6. POST PROCESSING & MAIN EXECUTION
 # ==========================================
@@ -881,8 +881,8 @@ def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, m
             logger.error("Job failed on backend.")
             return None
             
-        result = job.result()
-        counts = safe_get_counts(result[0])
+        job_result = job.result()
+        counts = safe_get_counts(job_result[0])
         return hybrid_post_process(counts, n_bits, ORDER, start_val, target_pub_x, method)
     except Exception as e:
         logger.error(f"Retrieval failed: {e}")
@@ -932,8 +932,8 @@ def run_best_solver():
     except: 
         service = QiskitRuntimeService(channel="ibm_cloud", token=config.TOKEN, instance=config.CRN)
     
-    # Force Real Backend (No Simulator)
-    backend = service.least_busy(simulator=False, operational=True, min_num_qubits=156)
+    # Force Real Backend
+    backend = service.least_busy(simulator=False, operational=True, min_num_qubits=127)
     print(f"[i] Selected Real Backend: {backend.name}")
 
     # 2. Classical Pre-Check
@@ -968,16 +968,15 @@ def run_best_solver():
         logger.info(">>> STANDARD RUN ENABLED <<<")
         
         print(f"[i] Transpiling circuit (ALAP/Sabre)...")
-        pm = generate_preset_pass_manager(backend=backend, optimization_level=config.OPT_LEVEL)
         
-        # Single Robust Transpile
-        transpiled_qc = transpile(pm.run(qc), backend=backend, optimization_level=3, 
+        # SINGLE ROBUST TRANSPILE (NO PassManager)
+        transpiled_qc = transpile(qc, backend=backend, optimization_level=config.OPT_LEVEL, 
                                   scheduling_method='alap', routing_method='sabre')
         
-        print(f"[i] Transpiled Circuit Depth: {transpiled_qc.depth()}")
-        print(f"[i] Transpiled Circuit Size: {transpiled_qc.size()}")
+        print(f"[i] Transpiled Depth: {transpiled_qc.depth()}")
+        print(f"[i] Transpiled Size:  {transpiled_qc.size()}")
         
-        sampler = Sampler(backend)
+        sampler = Sampler(mode=backend)
         sampler = configure_sampler_options(sampler)
         
         print(f"[i] Submitting Job with {config.SHOTS} shots...")
@@ -1005,5 +1004,3 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
-
-
