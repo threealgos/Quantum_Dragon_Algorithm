@@ -378,11 +378,35 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
     # --- FT SETUP ---
     ft_anc = QuantumRegister(2, "ft_anc") if config.USE_FT else None
 
-    # --- 0. PROBE ---
+      # --- 0. PROBE (UPGRADED: Hardware IPE Diagnostic) ---
     if mode_id == 0:
-        qc = QuantumCircuit(2, 2)
-        qc.h(0); qc.cx(0, 1); qc.measure_all()
-        return qc
+        # Bell test with a IPE loop to test phase coherence
+        print(f"[Builder] Mode 0: Hardware IPE test Probe.")
+        reg_ctrl = QuantumRegister(1, 'ctrl')
+        reg_state = QuantumRegister(1, 'state')
+        reg_flag = QuantumRegister(1, 'flag')
+        creg = ClassicalRegister(bits, 'meas') # Use full bits to test coherence time
+        creg_flag = ClassicalRegister(bits, 'flag_meas')
+        qc = QuantumCircuit(reg_ctrl, reg_state, reg_flag, creg, creg_flag)
+        
+        qc.x(reg_state[0]) # Init state |1>
+        
+        for k in range(bits):
+            if k > 0: qc.reset(reg_ctrl); qc.reset(reg_flag)
+            qc.h(reg_ctrl)
+            
+            # Dummy Oracle: Just CZ and CX
+            qc.cz(reg_ctrl[0], reg_state[0])
+            qc.cx(reg_ctrl[0], reg_flag[0])
+            
+            # Semiclassical Feedforward check
+            for m in range(k):
+                with qc.if_test((creg[m], 1)): qc.p(-pi / (2 ** (k - m)), reg_ctrl[0])
+            
+            qc.h(reg_ctrl)
+            qc.measure(reg_ctrl[0], creg[k])
+            qc.measure(reg_flag[0], creg_flag[k])
+        return qc 
         
     # --- 1. IPE (STANDARD) ---
     elif mode_id == 1:
@@ -1010,6 +1034,7 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+
 
 
 
