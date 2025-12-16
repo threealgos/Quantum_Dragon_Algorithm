@@ -98,7 +98,7 @@ class Config:
         self.OPT_LEVEL = 3
         self.USE_MANUAL_ZNE = True    
         self.USE_DD = True
-        self.DD_SEQUENCE = "XY4"      
+        self.DD_SEQUENCE = "XY4" # "XpXm & "XX"     
         self.USE_MEM = True           
     
     @property
@@ -238,10 +238,10 @@ def decode_repetition(qc, ancillas, logical_qubit):
     qc.cx(ancillas[1], logical_qubit)
     qc.ccx(ancillas[0], ancillas[1], logical_qubit)
 
-
 # ==========================================
 # 3. QUANTUM PRIMITIVES & ORACLES
 # ==========================================
+ 
 class GeometricIPE:
     def __init__(self, n_bits): self.n = n_bits
     def _oracle_geometric_phase(self, qc, ctrl, state_reg, point_val):
@@ -891,4 +891,5 @@ def run_best_solver():
 if __name__ == "__main__":
     run_best_solver()
  
+
 
