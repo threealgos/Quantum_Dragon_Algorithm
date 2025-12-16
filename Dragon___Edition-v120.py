@@ -42,18 +42,14 @@ from ecdsa import SigningKey, SECP256k1
 from qiskit.circuit import UnitaryGate, Gate
 from qiskit.circuit.library import ZGate, MCXGate, RYGate,, QFTGate
 from qiskit.circuit.library import QFT, HGate, CXGate, CCXGate
-import math
-from math import gcd, pi, ceil, log2
 from typing import Optional, List, Dict
 from qiskit.circuit import Parameter
 from Crypto.PublicKey import ECC
-import pickle
-import hashlib
-import base58
 from ecdsa.ellipticcurve import Point, CurveFp
 from ecdsa import numbertheory
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 import hashlib
 import base58
@@ -62,7 +58,7 @@ import logging
 from qiskit_ibm_runtime import Estimator, QiskitRuntimeService, Options, SamplerV2 as Sampler
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.visualization import plot_histogram, plot_distribution
-from math import gcd, ceil, log2
+from math import gcd, pi, ceil, log2
 from typing import Optional, Tuple, List, Dict
 import pickle, os, time
 try:
@@ -877,7 +873,7 @@ def save_key(k: int):
 def retrieve_and_process_job(job_id, service, n_bits, start_val, target_pub_x, method):
     try:
         job = service.job(job_id)
-        while job.status().name not in ["DONE", "COMPLETED", "ERROR", "CANCELLED"]:
+        while job.status().name not in ["DONE", "QUEUED", "COMPLETED", "ERROR", "CANCELLED"]:
             logger.info(f"Status: {job.status().name}...")
             time.sleep(60)
             
@@ -1009,4 +1005,5 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+
 
