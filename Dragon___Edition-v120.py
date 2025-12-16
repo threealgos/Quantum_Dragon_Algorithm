@@ -644,14 +644,25 @@ def build_circuit_selector(mode_id, bits=config.BITS) -> QuantumCircuit:
         qc.measure(ctrl, creg)
         return qc
 
-    # --- 15. GEOMETRIC IPE ---
+    # --- 15. GEOMETRIC IPE (UPGRADED) ---
     elif mode_id == 15:
+        print(f"[Builder] Mode 15: Geometric IPE (Optimized Pre-calc).")
         ctrl, state, creg = QuantumRegister(bits), QuantumRegister(bits), ClassicalRegister(bits)
         qc = QuantumCircuit(ctrl, state, creg)
+        
+        # Precompute power list to avoid repeated scalar mult
+        powers = []
+        curr = delta
+        for _ in range(bits):
+            powers.append(curr)
+            curr = ec_point_add(curr, curr)
+            
         qc.h(ctrl)
         geo = GeometricIPE(bits)
         for k in range(bits):
-            geo._oracle_geometric_phase(qc, ctrl[k], state, ec_scalar_mult((1<<k), delta))
+            # Use precomputed power
+            geo._oracle_geometric_phase(qc, ctrl[k], state, powers[k])
+            
         qc.append(QFTGate(bits, inverse=True), ctrl)
         qc.measure(ctrl, creg)
         return qc
@@ -1034,6 +1045,7 @@ def run_best_solver():
 
 if __name__ == "__main__":
     run_best_solver()
+
 
 
 
