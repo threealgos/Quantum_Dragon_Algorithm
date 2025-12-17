@@ -2,7 +2,7 @@
 
 ## **Architecture Document : The Quantum Dragon Algorithme**
 
-Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know Help . 
+Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know help . 
 
 BTC_ **1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai**    / / / / /    Puzzles: https://privatekeys.pw/puzzles/bitcoin-puzzle-tx
 <img width="687" height="431" alt="RECOMMENDED_Extra_Try WHAT IS UNDER run_dragon_code()" src="https://github.com/user-attachments/assets/3d113222-865b-4209-8625-2a89d7ba2075" />
