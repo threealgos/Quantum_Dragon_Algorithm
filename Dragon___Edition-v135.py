@@ -1,13 +1,13 @@
 # Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
 #======================================================================================================
- """
-🔥🐉 DRAGON_CODE v135 🐉🔥
+ """ TODO: The Code will Be Converted To Guppy ) Quantum programming language --->  NEXT We Can Use it in Q-Nexus Platformes .
+=======🔥🐉 DRAGON_CODE v135 🐉🔥 ==============
 🏆 Ultimate Quantum ECDLP Solver - 16 Optimized Modes
 🔢 Features: Full Draper/IPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
 📌 Key Components:
-- 16 optimized quantum modes with best oracles
+- 40 optimized quantum modes with best oracles total 41 the first One mod_0 is just for Futur_use for Google Quantum Ai
 - Complete Draper 1D/2D/Scalar + IPE oracle implementations
 - Advanced error mitigation and ZNE
 - Powerful post-processing with window scanning
