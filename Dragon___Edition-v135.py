@@ -8,7 +8,7 @@
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
 📌 Key Components:
-- 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum Ai
+- 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum QPU 1 PHisical Qubit ~ 1 million Logical Qubits  .
 - Complete Draper 1D/2D/Scalar + IPE oracle implementations
 - Advanced error mitigation and ZNE
 - Powerful post-processing with window scanning
@@ -948,7 +948,7 @@ class Config:
 
 
         # Backend settings
-        self.BACKEND = "ibm_marrakesh"
+        self.BACKEND = "ibm_marrakesh"  #  And For Future backends ~1386 Qubits Nighthawk/Kookaburra 
         self.TOKEN = None
         self.CRN = None
 
@@ -963,12 +963,12 @@ class Config:
         self.USE_ZNE = True          # Zero-noise extrapolation
         self.ZNE_METHOD = "manual"   # manual/standard
         self.USE_DD = True           # Dynamical decoupling
-        self.DD_SEQUENCE = "XY4"     # DD sequence type
+        self.DD_SEQUENCE = "XY4"     # DD sequence type # "XpXm & "XX" 
         self.USE_MEAS_MITIGATION = True  # Measurement error mitigation
 
 
         # Execution settings
-        self.SHOTS = 8192
+        self.SHOTS = 8192  # MAX_SHOTS = 16384 & 100,000 & 1 million
         self.OPT_LEVEL = 3
         self.INTERNAL_RESILIENCE_LEVEL = 2
         self.SEARCH_DEPTH = 10000     # Default search depth for window scanning
