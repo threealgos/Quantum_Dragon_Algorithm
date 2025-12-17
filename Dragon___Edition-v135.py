@@ -1,5 +1,6 @@
 # Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
 #======================================================================================================
+ """
 🔥🐉 DRAGON_CODE v135 🐉🔥
 🏆 Ultimate Quantum ECDLP Solver - 16 Optimized Modes
 🔢 Features: Full Draper/IPE Oracles, Advanced Mitigation, Smart Mode Selection
@@ -1143,7 +1144,7 @@ def initialize_qubits(qc: QuantumCircuit, qubit_reg: QuantumRegister, initial_st
 
 def apply_semiclassical_qft_phase_component(qc: QuantumCircuit, ctrl: QuantumRegister,
                                            creg: ClassicalRegister, bits: int, k: int):
-    """Apply the standard semiclassical QFT phase component.
+    """Apply the standard semiclassical QFT phase component."""
     for m in range(k):
         with qc.if_test((creg[m], 1)):
             qc.p(-math.pi / (2 ** (k - m)), ctrl[0])
@@ -2785,129 +2786,6 @@ def build_mode_28_full_quantum_optimized(bits: int, delta: Point) -> QuantumCirc
     
     return qc
 
-"""Precomputes (2^k)*delta for Mode 29 and KING.
-def precompute_delta_powers(delta: Point, bits: int) -> List[Optional[Point]]:
-    
-    Args:
-        delta: Point object (Q - start*G, from compute_offset).
-        bits: Number of bits (e.g., 135).
-    Returns:
-
-    powers = []
-    current = delta
-    for _ in range(bits):
-        powers.append(current)
-        if current is None:
-            # If current is None (point at infinity), all further powers are None
-            powers.extend([None] * (bits - len(powers)))
-            break
-        current = ec_point_add(current, current)  # current = 2^k * delta
-    return powers
-
-def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
-    """Mode 29 with precompute (gate-optimized, no quantum logic change)."""
-    logger.info(f"Building Mode 29: Semiclassical Omega [Strategy: {strategy}] (Gate-Optimized)")
-
-    # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
-    powers = precompute_delta_powers(delta, bits)
-    # --- END PRECOMPUTE ---
-
-    if strategy == "2D":
-        # 2D strategy (unchanged, uses (dx * (1<<k)) % N)
-        qr_c = QuantumRegister(1, "ctrl")
-        qr_s = QuantumRegister(bits, "state")
-        cr = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(qr_c, qr_s, cr)
-        qc.x(qr_s[0])
-        dx, dy = delta.x(), delta.y()
-        for k in range(bits):
-            qc.reset(qr_c)
-            qc.h(qr_c)
-            power = 1 << k
-            sx = (dx * power) % N  # Classical op (not precomputed here)
-            sy = (dy * power) % N
-            draper_adder_oracle_2d(qc, qr_c[0], qr_s, sx, sy)
-            for m in range(k):
-                angle = -math.pi / (2 ** (k - m))
-                with qc.if_test((cr[m], 1)):
-                    qc.p(angle, qr_c[0])
-            qc.h(qr_c)
-            qc.measure(qr_c[0], cr[k])
-    else:
-        # SERIAL strategy (uses precomputed powers[k])
-        qr_c = QuantumRegister(1, "ctrl")
-        qr_s = QuantumRegister(bits, "state")
-        cr = ClassicalRegister(bits, "meas")
-        qc = QuantumCircuit(qr_c, qr_s, cr)
-        qc.x(qr_s[0])
-        for k in range(bits):
-            qc.reset(qr_c)
-            qc.h(qr_c)
-            if powers[k]:
-                dx, dy = powers[k].x(), powers[k].y()  # Uses precomputed (2^k)*delta
-                draper_adder_oracle_1d_serial(qc, qr_c[0], qr_s, dx, dy)  # UNCHANGED
-            for m in range(k):
-                angle = -math.pi / (2 ** (k - m))
-                with qc.if_test((cr[m], 1)):
-                    qc.p(angle, qr_c[0])
-            qc.h(qr_c)
-            qc.measure(qr_c[0], cr[k])
-    return qc
-
-def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config) -> QuantumCircuit:
-    """Mode KING with precompute (gate-optimized, no quantum logic change)."""
-    logger.info("Building Mode KING: Semiclassical Omega (136 qubits) - THE KING (Gate-Optimized)")
-
-    # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
-    powers = precompute_delta_powers(delta, bits)
-    # --- END PRECOMPUTE ---
-
-    ctrl = QuantumRegister(1, "ctrl")
-    state = QuantumRegister(bits, "state")
-    creg = ClassicalRegister(bits, "meas")
-
-    # Fault tolerance setup (unchanged)
-    ft_regs = []
-    if config.USE_FT:
-        ft_regs.extend([
-            QuantumRegister(2, 'ft_ctrl'),
-            QuantumRegister(2 * bits, 'ft_state')
-        ])
-    qc = QuantumCircuit(ctrl, state, creg, *ft_regs)
-    ft_ancillas = []
-    if config.USE_FT:
-        ft_ancillas.append(apply_ft_to_qubit(qc, ctrl[0], config))
-        ft_ancillas.extend(apply_ft_to_register(qc, state, config))
-
-    for k in range(bits):
-        if k > 0:
-            qc.reset(ctrl[0])
-            qc.h(ctrl[0])
-        if config.USE_FT:
-            prepare_verified_ancilla(qc, ft_ancillas[0][0])
-            prepare_verified_ancilla(qc, ft_ancillas[0][1])
-        for m in range(k):
-            with qc.if_test((creg[m], 1)):
-                qc.p(-math.pi / (2 ** (k - m)), ctrl[0])
-
-        # --- USE PRECOMPUTED POWERS (REPLACES (delta[0] * power) % N) ---
-        dx = powers[k].x()  # Precomputed (2^k)*delta.x
-        dy = powers[k].y()  # Precomputed (2^k)*delta.y
-        draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)  # UNCHANGED
-
-        if config.USE_FT:
-            decode_repetition(qc, ft_ancillas[0], ctrl[0])
-        qc.h(ctrl[0])
-        qc.measure(ctrl[0], creg[k])
-
-    if config.USE_FT:
-        for i in range(bits):
-            decode_repetition(qc, ft_ancillas[i+1], state[i])
-    return qc
-
-        List of precomputed points (2^k)*delta, or None if infinity.
-    """
-
 # Change delta: Point
 def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
     """Build the circuit for the Semiclassical Omega mode."""
@@ -4490,3 +4368,126 @@ if __name__ == "__main__":
     🚀 Starting Quantum ECDLP Solver...
     """)
     run_dragon_code()
+
+"""Precomputes (2^k)*delta for Mode 29 and KING.
+def precompute_delta_powers(delta: Point, bits: int) -> List[Optional[Point]]:
+    
+    Args:
+        delta: Point object (Q - start*G, from compute_offset).
+        bits: Number of bits (e.g., 135).
+    Returns:
+
+    powers = []
+    current = delta
+    for _ in range(bits):
+        powers.append(current)
+        if current is None:
+            # If current is None (point at infinity), all further powers are None
+            powers.extend([None] * (bits - len(powers)))
+            break
+        current = ec_point_add(current, current)  # current = 2^k * delta
+    return powers
+
+def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
+    """Mode 29 with precompute (gate-optimized, no quantum logic change)."""
+    logger.info(f"Building Mode 29: Semiclassical Omega [Strategy: {strategy}] (Gate-Optimized)")
+
+    # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
+    powers = precompute_delta_powers(delta, bits)
+    # --- END PRECOMPUTE ---
+
+    if strategy == "2D":
+        # 2D strategy (unchanged, uses (dx * (1<<k)) % N)
+        qr_c = QuantumRegister(1, "ctrl")
+        qr_s = QuantumRegister(bits, "state")
+        cr = ClassicalRegister(bits, "meas")
+        qc = QuantumCircuit(qr_c, qr_s, cr)
+        qc.x(qr_s[0])
+        dx, dy = delta.x(), delta.y()
+        for k in range(bits):
+            qc.reset(qr_c)
+            qc.h(qr_c)
+            power = 1 << k
+            sx = (dx * power) % N  # Classical op (not precomputed here)
+            sy = (dy * power) % N
+            draper_adder_oracle_2d(qc, qr_c[0], qr_s, sx, sy)
+            for m in range(k):
+                angle = -math.pi / (2 ** (k - m))
+                with qc.if_test((cr[m], 1)):
+                    qc.p(angle, qr_c[0])
+            qc.h(qr_c)
+            qc.measure(qr_c[0], cr[k])
+    else:
+        # SERIAL strategy (uses precomputed powers[k])
+        qr_c = QuantumRegister(1, "ctrl")
+        qr_s = QuantumRegister(bits, "state")
+        cr = ClassicalRegister(bits, "meas")
+        qc = QuantumCircuit(qr_c, qr_s, cr)
+        qc.x(qr_s[0])
+        for k in range(bits):
+            qc.reset(qr_c)
+            qc.h(qr_c)
+            if powers[k]:
+                dx, dy = powers[k].x(), powers[k].y()  # Uses precomputed (2^k)*delta
+                draper_adder_oracle_1d_serial(qc, qr_c[0], qr_s, dx, dy)  # UNCHANGED
+            for m in range(k):
+                angle = -math.pi / (2 ** (k - m))
+                with qc.if_test((cr[m], 1)):
+                    qc.p(angle, qr_c[0])
+            qc.h(qr_c)
+            qc.measure(qr_c[0], cr[k])
+    return qc
+
+def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config) -> QuantumCircuit:
+    """Mode KING with precompute (gate-optimized, no quantum logic change)."""
+    logger.info("Building Mode KING: Semiclassical Omega (136 qubits) - THE KING (Gate-Optimized)")
+
+    # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
+    powers = precompute_delta_powers(delta, bits)
+    # --- END PRECOMPUTE ---
+
+    ctrl = QuantumRegister(1, "ctrl")
+    state = QuantumRegister(bits, "state")
+    creg = ClassicalRegister(bits, "meas")
+
+    # Fault tolerance setup (unchanged)
+    ft_regs = []
+    if config.USE_FT:
+        ft_regs.extend([
+            QuantumRegister(2, 'ft_ctrl'),
+            QuantumRegister(2 * bits, 'ft_state')
+        ])
+    qc = QuantumCircuit(ctrl, state, creg, *ft_regs)
+    ft_ancillas = []
+    if config.USE_FT:
+        ft_ancillas.append(apply_ft_to_qubit(qc, ctrl[0], config))
+        ft_ancillas.extend(apply_ft_to_register(qc, state, config))
+
+    for k in range(bits):
+        if k > 0:
+            qc.reset(ctrl[0])
+            qc.h(ctrl[0])
+        if config.USE_FT:
+            prepare_verified_ancilla(qc, ft_ancillas[0][0])
+            prepare_verified_ancilla(qc, ft_ancillas[0][1])
+        for m in range(k):
+            with qc.if_test((creg[m], 1)):
+                qc.p(-math.pi / (2 ** (k - m)), ctrl[0])
+
+        # --- USE PRECOMPUTED POWERS (REPLACES (delta[0] * power) % N) ---
+        dx = powers[k].x()  # Precomputed (2^k)*delta.x
+        dy = powers[k].y()  # Precomputed (2^k)*delta.y
+        draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)  # UNCHANGED
+
+        if config.USE_FT:
+            decode_repetition(qc, ft_ancillas[0], ctrl[0])
+        qc.h(ctrl[0])
+        qc.measure(ctrl[0], creg[k])
+
+    if config.USE_FT:
+        for i in range(bits):
+            decode_repetition(qc, ft_ancillas[i+1], state[i])
+    return qc
+
+        List of precomputed points (2^k)*delta, or None if infinity.
+    """
