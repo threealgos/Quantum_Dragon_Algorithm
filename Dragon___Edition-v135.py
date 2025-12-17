@@ -31,7 +31,7 @@ from qiskit.synthesis import synth_qft_full
 from qiskit.primitives.containers.primitive_result import PrimitiveResult
 from qiskit.circuit.controlflow.break_loop import BreakLoopPlaceholder
 from qiskit.circuit import UnitaryGate, Gate, Parameter
-from qiskit.circuit.library import ZGate, MCXGate, RYGate, QFTGate, QFT, HGate, CXGate, CCXGate
+from qiskit.circuit.library import ZGate, MCXGate, RYGate, QFTGate, HGate, CXGate, CCXGate
 from qiskit.visualization import plot_histogram, plot_distribution
 from qiskit_ibm_runtime import Estimator, QiskitRuntimeService, Options, SamplerV2 as Sampler
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
