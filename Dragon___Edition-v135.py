@@ -4370,14 +4370,17 @@ if __name__ == "__main__":
     """)
     run_dragon_code()
 
-"""Precomputes (2^k)*delta for Mode 29 and KING.
+"""
+Precomputes (2^k)*delta for Mode 29 and KING (vaulted for future use).
+
 def precompute_delta_powers(delta: Point, bits: int) -> List[Optional[Point]]:
-    
+    '''Precomputes powers of delta (2^k * delta) for gate optimization.
     Args:
         delta: Point object (Q - start*G, from compute_offset).
         bits: Number of bits (e.g., 135).
     Returns:
-
+        List of precomputed points (2^k)*delta, or None if infinity.
+    '''
     powers = []
     current = delta
     for _ in range(bits):
@@ -4390,7 +4393,7 @@ def precompute_delta_powers(delta: Point, bits: int) -> List[Optional[Point]]:
     return powers
 
 def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
-    """Mode 29 with precompute (gate-optimized, no quantum logic change)."""
+    '''Mode 29 with precompute (gate-optimized, no quantum logic change).'''
     logger.info(f"Building Mode 29: Semiclassical Omega [Strategy: {strategy}] (Gate-Optimized)")
 
     # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
@@ -4440,7 +4443,7 @@ def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "
     return qc
 
 def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config) -> QuantumCircuit:
-    """Mode KING with precompute (gate-optimized, no quantum logic change)."""
+    '''Mode KING with precompute (gate-optimized, no quantum logic change).'''
     logger.info("Building Mode KING: Semiclassical Omega (136 qubits) - THE KING (Gate-Optimized)")
 
     # --- PRECOMPUTE (2^k)*delta (MATHEMATICALLY CORRECT) ---
@@ -4489,6 +4492,4 @@ def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config)
         for i in range(bits):
             decode_repetition(qc, ft_ancillas[i+1], state[i])
     return qc
-
-        List of precomputed points (2^k)*delta, or None if infinity.
-    """
+"""
