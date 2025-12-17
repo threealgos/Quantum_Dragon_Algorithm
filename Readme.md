@@ -1,3 +1,5 @@
+<img width="687" height="431" alt="RECOMMENDED_Extra_Try WHAT IS UNDER run_dragon_code()" src="https://github.com/user-attachments/assets/3d113222-865b-4209-8625-2a89d7ba2075" />
+
 ## **Architecture Document : The Quantum Dragon Algorithme**
 
 Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know. 
@@ -76,3 +78,6 @@ You are correct. The standard methods calculate k directly and require massive h
 Standard Shor: Ignores range info. Tries to find the key in the whole field 2^256. Wastes qubits.
 Dragon Algo: Uses the range info (start_keyspace) to calculate Δ. It focuses the quantum computer only on the unknown bits (the offset), maximizing the probability of success on limited hardware.
 The records have been updated. The provided Python code (v113) is the direct implementation of the Dragon Algo architecture.
+
+
+
