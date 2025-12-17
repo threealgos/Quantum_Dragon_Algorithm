@@ -1,7 +1,8 @@
 # Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
-#======================================================================================================
- """ TODO: The Code will Be Converted To Guppy ) Quantum programming language --->  NEXT We Can Use it in Q-Nexus Platformes .
-=======🔥🐉 DRAGON_CODE v135 🐉🔥 ==============
+#============================================================================================
+ """ TODO: The Qiskit Code will Be Converted To Guppy ) Quantum programming language --->  NEXT We Can Use it in Q-Nexus Platformes .
+ 
+=========🐉 DRAGON_CODE v135 🐉🔥=============
 🏆 Ultimate Quantum ECDLP Solver - 16 Optimized Modes
 🔢 Features: Full Draper/IPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
