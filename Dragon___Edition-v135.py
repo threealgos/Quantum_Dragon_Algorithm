@@ -3,12 +3,12 @@
  """ TODO: The Qiskit Code will Be Converted To Guppy ) Quantum programming language --->  NEXT We Can Use it in Q-Nexus Platformes .
  
 =========🐉 DRAGON_CODE v135 🐉🔥=============
-🏆 Ultimate Quantum ECDLP Solver - 16 Optimized Modes
+🏆 Ultimate Quantum ECDLP Solver - 40 optimized Modes
 🔢 Features: Full Draper/IPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
 📌 Key Components:
-- 40 optimized quantum modes with best oracles total 41 the first One mod_0 is just for Futur_use for Google Quantum Ai
+- 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum Ai
 - Complete Draper 1D/2D/Scalar + IPE oracle implementations
 - Advanced error mitigation and ZNE
 - Powerful post-processing with window scanning
@@ -978,7 +978,7 @@ class Config:
 
     def user_menu(self):
         print("\n" + "="*70)
-        print("🔥 DRAGON_CODE v135 🐉 - 16 Optimized Modes 🏆")
+        print("🔥 DRAGON_CODE v135 🐉 - 41 Optimized Modes 🏆")
         print("="*70)
         print("📌 Available Modes:")
         for mode_id, meta in MODE_METADATA.items():
