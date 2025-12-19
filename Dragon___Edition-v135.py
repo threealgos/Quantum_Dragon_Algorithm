@@ -978,7 +978,7 @@ class Config:
 
     def user_menu(self):
         print("\n" + "="*70)
-        print("🔥 DRAGON_CODE v135 🐉 - 41 Optimized Modes 🏆")
+        print(" DRAGON_CODE v135 🐉 - 41 Optimized Modes 🏆")
         print("="*70)
         print("📌 Available Modes:")
         for mode_id, meta in MODE_METADATA.items():
@@ -4362,9 +4362,9 @@ def run_dragon_code():
 
 if __name__ == "__main__":
     print("""
-    🔥🐉 DRAGON_CODE v135 🐉🔥
+    🐉 DRAGON_CODE v135 🐉🔥
     ----------------------------
-    💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
+    Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai 💰
     ----------------------------
     🚀 Starting Quantum ECDLP Solver...
     """)
