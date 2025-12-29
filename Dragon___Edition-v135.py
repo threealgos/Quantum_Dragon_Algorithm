@@ -1,14 +1,15 @@
 # Hi Realy hope you get me any Donation from Any Puzzles you Succeed to Break Using The Code_ 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai /////
 #============================================================================================
- """ TODO: The Qiskit Code will Be Converted To Guppy ) Quantum programming language --->  NEXT We Can Use it in Q-Nexus Platformes .
- 
-=========🐉 DRAGON_CODE v135 🐉🔥=============
-🏆 Ultimate Quantum ECDLP Solver - 40 optimized Modes
+"""
+TODO: The Qiskit Code will Be Converted To Guppy ) Quantum programming language ---> NEXT We Can Use it in Q-Nexus Platformes.
+
+=========🐉 DRAGON__CODE v120 🐉🔥=============
+🏆 Ultimate Quantum ECDLP Solver - 41 optimized Modes
 🔢 Features: Full Draper/IPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
 📌 Key Components:
-- 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum QPU 1 PHisical Qubit ~ 1 million Logical Qubits  .
+- 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum QPU 1 PHisical Qubit ~ 1 million Logical Qubits.
 - Complete Draper 1D/2D/Scalar + IPE oracle implementations
 - Advanced error mitigation and ZNE
 - Powerful post-processing with window scanning
@@ -19,18 +20,18 @@
 # Qiskit Imports
 from IPython.display import display, HTML
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
-from qiskit.circuit import UnitaryGate, Gate
 from qiskit.circuit.library import QFTGate, HGate, CXGate, CCXGate, QFT
 from qiskit.synthesis import synth_qft_full
 from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, Sampler, Options
-from qiskit.providers.fake_provider import FakeVigo, FakeLagos, FakeManila
+from qiskit_ibm_runtime.fake_provider import FakeVigoV2, FakeLagosV2, FakeManilaV2
 from qiskit_aer import AerSimulator
+from qiskit.circuit.parameterexpression import Parameter
 from qiskit import synthesis, QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.synthesis import synth_qft_full
 from qiskit.primitives.containers.primitive_result import PrimitiveResult
 from qiskit.circuit.controlflow.break_loop import BreakLoopPlaceholder
-from qiskit.circuit import UnitaryGate, Gate, Parameter
+from qiskit.circuit.library import UnitaryGate
 from qiskit.circuit.library import ZGate, MCXGate, RYGate, QFTGate, HGate, CXGate, CCXGate
 from qiskit.visualization import plot_histogram, plot_distribution
 from qiskit_ibm_runtime import Estimator, QiskitRuntimeService, Options, SamplerV2 as Sampler
@@ -60,6 +61,266 @@ from ecdsa.ellipticcurve import Point, CurveFp
 from ecdsa import numbertheory
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
+"""
+def custom_transpile(qc, backend, optimization_level=3):
+    from qiskit.transpiler import PassManager
+    from qiskit.transpiler.passes import (
+        Unroller,
+        Optimize1qGates,
+        CXCancellation,
+        SabreSwap,
+        SabreLayout,
+        TrivialLayout,
+        RemoveDiagonalGatesBeforeMeasure,
+        Depth,
+        Width,
+        Size,
+        CommutativeCancellation,
+        OptimizeSwapBeforeMeasure,
+        Collect2qBlocks,
+        ConsolidateBlocks,
+        GateDirection,
+        PadDynamicalDecoupling,
+        RemoveResetInZeroState,
+        RemoveBarriers,
+        CheckMap,
+        SetLayout,
+        FullAncillaAllocation,
+        EnlargeWithAncilla,
+        ApplyLayout,
+        BarrierBeforeFinalMeasurements,
+        FixedPoint,
+        CheckCXDirection,
+        CheckGateDirection,
+        OptimizeCliffs,
+        Optimize1qGatesDecomposition,
+        OptimizePhaseGates,
+        OptimizeSingleQubitGates,
+        OptimizeBarriers,
+        RemoveRedundantResets,
+    )
+
+    coupling_map = backend.configuration().coupling_map
+    basis_gates = backend.configuration().basis_gates
+
+    pass_manager = PassManager([
+        Unroller(basis_gates),
+        RemoveBarriers(),
+        Optimize1qGates(),
+        CXCancellation(),
+        SabreLayout(coupling_map, max_iterations=100),
+        SabreSwap(coupling_map, heuristic='basic', fake_run=False),
+        TrivialLayout(coupling_map),
+        RemoveDiagonalGatesBeforeMeasure(),
+        Depth(),
+        Width(),
+        Size(),
+        CommutativeCancellation(),
+        OptimizeSwapBeforeMeasure(),
+        Collect2qBlocks(),
+        ConsolidateBlocks(),
+        GateDirection(),
+        PadDynamicalDecoupling(),
+        RemoveResetInZeroState(),
+        CheckMap(coupling_map),
+        SetLayout(),
+        FullAncillaAllocation(),
+        EnlargeWithAncilla(),
+        ApplyLayout(),
+        BarrierBeforeFinalMeasurements(),
+        FixedPoint('depth'),
+        CheckCXDirection(),
+        CheckGateDirection(),
+        OptimizeCliffs(),
+        Optimize1qGatesDecomposition(),
+        OptimizePhaseGates(),
+        OptimizeSingleQubitGates(),
+        OptimizeBarriers(),
+        RemoveRedundantResets(),
+        RemoveDiagonalGatesBeforeMeasure(),
+        RemoveResetInZeroState(),
+        Depth(),
+        Width(),
+        Size(),
+        CommutativeCancellation(),
+        OptimizeSwapBeforeMeasure(),
+        Collect2qBlocks(),
+        ConsolidateBlocks(),
+        GateDirection(),
+        PadDynamicalDecoupling(),
+    ])
+
+    return pass_manager.run(qc)
+
+def manual_zne(qc: QuantumCircuit, backend, shots: int, config: Config, scales: List[int] = [1, 3, 5]) -> Dict[str, float]:
+    logger.info(f"🧪 Running Manual ZNE (Scales: {scales}) with {shots} shots...")
+    counts_list = []
+    scale_results = {}
+
+    for scale in scales:
+        scaled_qc = qc.copy()
+        scale_results[scale] = {}
+
+        if scale > 1:
+            logger.debug(f"Applying noise scaling factor {scale}")
+            for _ in range(scale - 1):
+                scaled_qc.barrier()
+                for q in scaled_qc.qubits:
+                    scaled_qc.id(q)
+
+        logger.info(f"[⚙️] Transpiling Scale {scale}...")
+        tqc = custom_transpile(
+            scaled_qc,
+            backend=backend,
+            optimization_level=config.OPT_LEVEL
+        )
+
+        scale_results[scale] = {
+            'depth': tqc.depth(),
+            'size': tqc.size(),
+            'qubits': tqc.num_qubits,
+            'gates': estimate_gate_counts(tqc)
+        }
+        logger.debug(f"[📊] Scale {scale} Metrics: Depth={tqc.depth()}, Size={tqc.size()}")
+
+        sampler = Sampler(backend)
+        sampler = configure_sampler_options(sampler, config)
+        sampler.options.resilience_level = 0  # Force Raw for ZNE
+
+        job = sampler.run([tqc], shots=shots)
+        logger.debug(f"[📡] ZNE Scale {scale} Job ID: {job.job_id()}")
+
+        try:
+            job_result = job.result()
+            counts = safe_get_counts(job_result[0])
+            if counts:
+                counts_list.append(counts)
+                logger.debug(f"[✅] Scale {scale}: {len(counts)} unique measurements")
+            else:
+                logger.warning(f"[⚠️] No counts for scale {scale}")
+        except Exception as e:
+            logger.error(f"[❌] Scale {scale} failed: {e}")
+            continue
+
+    if not counts_list:
+        logger.warning("⚠️ No valid counts from any ZNE scale")
+        return defaultdict(float)
+
+    logger.info("📈 Performing linear extrapolation...")
+    extrapolated = defaultdict(float)
+    all_keys = set().union(*counts_list)
+
+    for key in all_keys:
+        vals = [c.get(key, 0) for c in counts_list]
+        if len(vals) > 1:
+            try:
+                fit = np.polyfit(scales[:len(vals)], vals, 1)
+                extrapolated[key] = max(0, fit[1])
+                logger.debug(f"Extrapolated {key}: {extrapolated[key]}")
+            except Exception as e:
+                logger.warning(f"Extrapolation failed for {key}: {e}")
+                extrapolated[key] = vals[-1]  # Fallback
+        else:
+            extrapolated[key] = vals[0]
+
+    logger.info(f"📊 ZNE Results: {len(extrapolated)} extrapolated values")
+    return extrapolated
+
+def run_dragon_code():
+    config = Config()
+    config.user_menu()
+
+    # Initialize engines
+    mitigation_engine = ErrorMitigationEngine(config)
+    post_processor = UniversalPostProcessor(config)
+
+    # Prompt for IBM Quantum credentials if not set
+    if not config.TOKEN:
+        config.TOKEN = input("Enter your IBM Quantum API token: ").strip()
+    if not config.CRN:
+        config.CRN = input("Enter your IBM Quantum CRN (or press Enter for 'free'): ").strip() or "free"
+
+    # Connect to IBM Quantum
+    logger.info("🔌 Connecting to IBM Quantum services...")
+    service = QiskitRuntimeService(
+        channel="ibm_quantum_platform",
+        token=config.TOKEN,
+        instance=config.CRN
+    )
+
+    # Select backend
+    backend = select_backend(config)
+
+    # Decompress target and compute delta
+    logger.info("🔐 Decompressing public key...")
+    Q = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
+    start_point = ec_scalar_mult(config.KEYSPACE_START, G)
+    delta = ec_point_sub(Q, start_point)
+    logger.info(f"   Public Key: {hex(Q.x())[:10]}...{hex(Q.x())[-10:]}")
+    logger.info(f"   Delta: ({hex(delta.x())[:10]}..., {hex(delta.y())[-10:]})")
+
+    # Build circuit
+    if isinstance(config.METHOD, int):
+        if config.METHOD not in MODE_METADATA:
+            logger.warning(f"Mode {config.METHOD} does not exist. Defaulting to Mode KING (41).")
+            mode_id = 41
+        else:
+            mode_id = config.METHOD
+    else:
+        mode_id = 41
+
+    mode_meta = MODE_METADATA[mode_id]
+    logger.info(f"🛠️ Building circuit for mode {mode_id}: {mode_meta['logo']} {mode_meta['name']}")
+
+    qc = build_circuit_selector(mode_id, config.BITS, delta, config)
+
+    # Circuit analysis
+    mitigation_engine.analyze_circuit(qc, backend)
+
+    # Transpile with custom pass manager
+    logger.info("⚙️ Transpiling circuit...")
+    transpiled = custom_transpile(qc, backend, optimization_level=config.OPT_LEVEL)
+
+    logger.info(f"   Original depth: {qc.depth()}")
+    logger.info(f"   Transpiled depth: {transpiled.depth()}")
+    logger.info(f"   Original size: {qc.size()}")
+    logger.info(f"   Transpiled size: {transpiled.size()}")
+    logger.info(f"   Qubits used: {transpiled.num_qubits}")
+
+    # Execute with mitigation
+    sampler = Sampler(backend)
+    sampler = mitigation_engine.configure_sampler_options(sampler)
+
+    if config.USE_ZNE and config.ZNE_METHOD == "manual":
+        logger.info("🧪 Running Manual ZNE...")
+        counts = manual_zne(transpiled, backend, config.SHOTS, config)
+    else:
+        logger.info(f"📡 Submitting job with {config.SHOTS} shots...")
+        job = sampler.run([transpiled], shots=config.SHOTS)
+        logger.info(f"   Job ID: {job.job_id()}")
+        logger.info("⏳ Waiting for results...")
+        result = job.result()
+        counts = mitigation_engine.safe_get_counts(result[0])
+
+    # Display top results
+    logger.info("\n📊 Top Measurement Results:")
+    for i, (state, count) in enumerate(sorted(counts.items(), key=lambda x: x[1], reverse=True)[:10]):
+        logger.info(f"  {i+1}. {state}: {count} counts")
+
+    # Post-processing
+    logger.info("🔍 Beginning comprehensive post-processing...")
+    candidate = post_processor.process_all_measurements(
+        counts, config.BITS, ORDER, config.KEYSPACE_START, Q.x(), mode_meta
+    )
+
+    if candidate:
+        logger.info(f"🎉 SUCCESS: Found candidate private key: {hex(candidate)}")
+    else:
+        logger.warning("❌ No candidates found in top results")
+
+    plot_visuals(counts, config.BITS)
+"""
 
 # ==========================================
 # 1. PRESETS & CONSTANTS
@@ -93,11 +354,10 @@ ORDER = N
 CURVE = CurveFp(P, A, B)
 G = Point(CURVE, Gx, Gy)
 G_POINT = G
------------------------------------------------------------------------
+#-----------------------------------------------------------------------
 
 # Constants for mode IDs
-KING = 99  # Special mode ID for the KING mode
-
+# KING = 41  # Special mode ID for the KING mode
 
 # --- Logging ---
 logging.basicConfig(
@@ -259,16 +519,7 @@ def ec_point_add(p1: Optional[Point], p2: Optional[Point]) -> Optional[Point]:
 # Draper adders
 def draper_add_const(qc: QuantumCircuit, ctrl, target: QuantumRegister, value: int,
                     modulus: int = N, inverse: bool = False):
-    """Draper's algorithm for adding a constant to a quantum register.
 
-    Args:
-        qc: Quantum circuit
-        ctrl: Control qubit (optional)
-        target: Target quantum register
-        value: Constant to add
-        modulus: Modulus for addition (default N)
-        inverse: Whether to subtract instead of add
-    """
     sign = -1 if inverse else 1
     n = len(target)
 
@@ -286,18 +537,7 @@ def draper_add_const(qc: QuantumCircuit, ctrl, target: QuantumRegister, value: i
     # Apply inverse QFT
     iqft_reg(qc, target)
 
-def add_const_mod_gate(c: int, mod: int, use_matrix: bool = False, max_matrix_size: int = 64) -> Gate:
-    """Create a modular addition gate using either matrix or Draper's method.
-
-    Args:
-        c: Constant to add
-        mod: Modulus for addition
-        use_matrix: Whether to use matrix representation
-        max_matrix_size: Maximum size for matrix representation
-
-    Returns:
-        Quantum gate implementing |x⟩ → |(x + c) mod mod⟩
-    """
+def add_const_mod_gate(c: int, mod: int, use_matrix: bool = False, max_matrix_size: int = 64) -> UnitaryGate:
     n_qubits = math.ceil(math.log2(mod)) if mod > 1 else 1
 
     # Use matrix representation for small moduli
@@ -386,31 +626,6 @@ def iqft_reg(qc: QuantumCircuit, reg: QuantumRegister):
     qc.append(synth_qft_full(len(reg), do_swaps=False).inverse().to_gate(), reg)
 
 # Matrix/Unitary scalable gate
-def add_const_mod_gate(c: int, mod: int) -> Gate:
-    """Smart scalable gate for Matrix Mod"""
-    n_qubits = math.ceil(math.log2(mod)) if mod > 1 else 1
-    
-    if mod <= config.MAX_MATRIX_SIZE and config.USE_MATRIX_SCALING:
-        # Use unitary matrix representation
-        mat = np.zeros((mod, mod), dtype=complex)
-        for x in range(mod):
-            mat[(x + c) % mod, x] = 1
-        
-        full_dim = 2 ** n_qubits
-        if full_dim > mod:
-            full_mat = np.eye(full_dim, dtype=complex)
-            full_mat[:mod, :mod] = mat
-            return UnitaryGate(full_mat, label=f"+{c} mod {mod}")
-        return UnitaryGate(mat, label=f"+{c} mod {mod}")
-    else:
-        # Use Draper QFT-based addition
-        qc = QuantumCircuit(n_qubits, name=f"+{c} (Draper)")
-        qc.append(QFTGate(n_qubits, do_swaps=False), range(n_qubits))
-        for i in range(n_qubits):
-            qc.p(2 * math.pi * c / (2 ** (n_qubits - i)), i)
-        qc.append(QFTGate(n_qubits, do_swaps=False).inverse(), range(n_qubits))
-        return qc.to_gate()
-
 class GeometricIPE:
     """Enhanced Geometric IPE implementation with robust point handling"""
     def __init__(self, n_bits: int):
@@ -614,28 +829,6 @@ def ft_draper_modular_adder_omega(qc: QuantumCircuit, value: int, target_reg: Qu
     return ft_draper_modular_adder(qc, None, target_reg, ancilla_reg, value, modulus)
 
 
-def add_const_mod_gate(c: int, mod: int) -> Gate:
-    """Create a modular addition gate."""
-    n_qubits = math.ceil(math.log2(mod)) if mod > 1 else 1
-    if mod <= config.MAX_MATRIX_SIZE and config.USE_SMART_GATE:
-        mat = np.zeros((mod, mod), dtype=complex)
-        for x in range(mod):
-            mat[(x + c) % mod, x] = 1
-        full_dim = 2 ** n_qubits
-        if full_dim > mod:
-            full_mat = np.eye(full_dim, dtype=complex)
-            full_mat[:mod, :mod] = mat
-            return UnitaryGate(full_mat, label=f"+{c} mod {mod}")
-        return UnitaryGate(mat, label=f"+{c} mod {mod}")
-    else:
-        qc = QuantumCircuit(n_qubits, name=f"+{c} (Draper)")
-        qc.append(QFTGate(n_qubits, do_swaps=False), range(n_qubits))
-        for i in range(n_qubits):
-            qc.p(2 * math.pi * c / (2 ** (n_qubits - i)), i)
-        qc.append(QFTGate(n_qubits, do_swaps=False).inverse(), range(n_qubits))
-        return qc.to_gate()
-
-
 def shor_oracle(qc: QuantumCircuit, a_reg: QuantumRegister, b_reg: QuantumRegister,
                state_reg: QuantumRegister, points: List[Point], ancilla_reg: QuantumRegister):
     """
@@ -715,15 +908,23 @@ def ecdlp_oracle_ab(qc: QuantumCircuit, a_reg: QuantumRegister, b_reg: QuantumRe
                 ft_draper_modular_adder(qc, b_reg[i], point_reg, ancilla_reg, val)
 
     logger.debug("Applied ECDLP oracle")
-    
-def windowed_oracle(qc: QuantumCircuit, ctrl: QuantumRegister, state_reg: QuantumRegister,
-                   delta_point: Point, window_size: int, k_step: int):
+ 
+def windowed_oracle(
+    qc: QuantumCircuit,
+    ctrl: QuantumRegister,
+    state_reg: QuantumRegister,
+    delta_point: Point,
+    window_size: int,
+    k_step: int
+) -> None:
+    """Apply windowed oracle using delta_point (Point object)."""
     power = 1 << k_step
-    dx = (delta_point[0] * power) % N
-    dy = (delta_point[1] * power) % N
+    dx = (delta_point.x() * power) % N  # Fixed: delta_point.x()
+    dy = (delta_point.y() * power) % N  # Fixed: delta_point.y()
+
     for j in range(window_size):
         draper_adder_oracle_1d_serial(qc, ctrl[j], state_reg, dx)
-    logger.debug(f"Applied windowed oracle with window size {window_size}")
+    logger.debug(f"Applied windowed oracle with window size {window_size}, dx={hex(dx)[:10]}")
 
 
 def ec_scalar_mult(k: int, point: Point) -> Optional[Point]:
@@ -792,12 +993,14 @@ def precompute_points(bits: int) -> List[Point]:
         current = ec_point_add(current, current)
     return points
 
+
 def compute_offset(Q: Point, start: int) -> Point:
     """Compute delta = Q - start*G"""
     start_G = ec_scalar_mult(start, G)
     if start_G is None:
         return Q
-    return ec_point_sub(Q, start_G)
+    return ec_point_sub(Q, start_G)  # Keep as Point, update callers
+
 
 def precompute_good_indices_range(start, end, target_qx, gx=G.x(), gy=G.y(), p=P, max_window=100000):
     """
@@ -879,12 +1082,22 @@ def precompute_good_indices_range(start, end, target_qx, gx=G.x(), gy=G.y(), p=P
     return good
 
 # Oracle variations
-def ipe_oracle_phase(qc: QuantumCircuit, ctrl, point_reg: QuantumRegister, delta_point: Point, k_step, order=ORDER):
-    """IPE oracle phase"""
+def ipe_oracle_phase(
+    qc: QuantumCircuit,
+    ctrl: QuantumRegister,
+    point_reg: QuantumRegister,
+    delta_point: Point,
+    k_step: int,
+    order: int = ORDER
+) -> None:
+    """Apply IPE phase oracle using delta_point (Point object)."""
     power = 1 << k_step
-    const_x = (delta_point[0] * power) % order
-    if const_x:
+    const_x = (delta_point.x() * power) % order  # Fixed: delta_point.x()
+
+    if const_x != 0:
         draper_add_const(qc, ctrl, point_reg, const_x)
+        logger.debug(f"Applied IPE phase oracle with power={power}, const_x={hex(const_x)[:10]}")
+
 
 # ==========================================
 # 5. MODE METADATA with all 41 modes 
@@ -931,7 +1144,7 @@ MODE_METADATA = {
     37: {"name": "Hive Swarm Omega", "qubits": 127, "success": 65, "endian": "LSB", "oracle": "HiveOmega", "logo": "🐝"},
     38: {"name": "Explicit Logic Omega", "qubits": 136, "success": 70, "endian": "LSB", "oracle": "ExplicitOmega", "logo": "📝"},
     39: {"name": "Matrix Mod Omega 🆕", "qubits": 132, "success": 78, "endian": "LSB", "oracle": "MatrixOmega", "logo": "🌀"},
-    KING: {"name": "Semiclassical Omega KING 👑", "qubits": 136, "success": 85, "endian": "LSB", "oracle": "IPEKing", "logo": "👑"}
+    41: {"name": "Semiclassical Omega KING 👑", "qubits": 136, "success": 85, "endian": "LSB", "oracle": "IPEKing", "logo": "👑"}
 }
 
 
@@ -948,7 +1161,7 @@ class Config:
 
 
         # Backend settings
-        self.BACKEND = "ibm_marrakesh"  #  And For Future backends ~1386 Qubits Nighthawk/Kookaburra 
+        self.BACKEND = "ibm_kingston"  #  And For Future backends ~1386 Qubits Nighthawk/Kookaburra 
         self.TOKEN = None
         self.CRN = None
 
@@ -978,7 +1191,7 @@ class Config:
 
     def user_menu(self):
         print("\n" + "="*70)
-        print(" DRAGON_CODE v135 🐉 - 41 Optimized Modes 🏆")
+        print(" 🐉 DRAGON_Edition_CODE v120 🔥 - 40 Optimized Modes |+> Mode King 🏆")
         print("="*70)
         print("📌 Available Modes:")
         for mode_id, meta in MODE_METADATA.items():
@@ -999,7 +1212,7 @@ class Config:
 
 
         # Mode selection
-        m = input(f"Select Mode [0-15] or 'smart' (default {self.METHOD}): ").strip()
+        m = input(f"Select Mode [0-41] or 'smart' (default {self.METHOD}): ").strip()
         if m: self.METHOD = m if m.lower() == "smart" else int(m)
 
 
@@ -1043,22 +1256,22 @@ class Config:
 def select_backend(config):
     """Select appropriate backend with full analysis"""
     service = QiskitRuntimeService(
-        channel="ibm_quantum",
+        channel="ibm_quantum_platform",
         token=config.TOKEN,
         instance=config.CRN
     )
-
 
     print("\n🔍 Available IBM Quantum Backends:")
     backends = service.backends()
     for backend in backends:
         try:
             status = backend.status()
+            queue_info = status.pending_jobs
+            queue_length = queue_info if isinstance(queue_info, int) else len(queue_info)
             print(f"  {backend.name} ({backend.num_qubits} qubits, {'🟢 Operational' if status.operational else '🔴 Offline'})")
-            print(f"     Queue: {len(backend.pending_jobs())} jobs")
-        except:
-            print(f"  {backend.name} (Status unavailable)")
-
+            print(f"     Queue: {queue_length} jobs")
+        except Exception as e:
+            print(f"  {backend.name} (Status unavailable: {e})")
 
     if config.BITS == 17:
         print("\n💡 Using AerSimulator for 17-bit key (most efficient)")
@@ -1071,7 +1284,13 @@ def select_backend(config):
             min_num_qubits=156
         )
         print(f"  Selected: {backend.name} ({backend.num_qubits} qubits)")
-        print(f"  Queue status: {len(backend.pending_jobs())} jobs pending")
+        try:
+            status = backend.status()
+            queue_info = status.pending_jobs
+            queue_length = queue_info if isinstance(queue_info, int) else len(queue_info)
+            print(f"  Queue status: {queue_length} jobs pending")
+        except Exception as e:
+            print(f"  Queue status: (unavailable: {e})")
         return backend
 
 
@@ -1201,7 +1420,7 @@ def apply_hadamard_gates(qc: QuantumCircuit, qubit_reg: QuantumRegister):
 # ==========================================
 def get_oracle_strategy(mode_id: int, backend_qubits: int) -> str:
     """Determine the oracle strategy based on the mode and available qubits"""
-    if mode_id in [14, 34, 35, KING]:
+    if mode_id in [14, 34, 35, 41]:
         return "SHOR_PURE" if backend_qubits >= 150 else "SHOR_MOD"
     elif mode_id in [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 20, 21, 22, 23, 24, 25, 27, 28, 29, 31, 32, 33, 36, 37, 38, 39]:
         return "2D" if backend_qubits >= 140 else "SERIAL"
@@ -1214,7 +1433,7 @@ def get_best_mode_id(bits: int, available_qubits: int) -> int:
     # Prioritize high-success modes that fit within available qubits
     # KING mode has highest priority when available
     high_success_modes = [
-        (KING, 85),    # KING mode - highest success and priority
+        (41, 85),    # KING mode - highest success and priority
         (29, 75),     # Semiclassical Omega
         (39, 78),     # Matrix Mod Omega
         (20, 75),     # Matrix Mod
@@ -1239,7 +1458,7 @@ def get_best_mode_id(bits: int, available_qubits: int) -> int:
             return mode_id
 
 
-    return 4  # Default to Semiclassical
+    return 41  # Default to KING (41) if no other mode fits
 
 
 # ==========================================
@@ -1256,231 +1475,94 @@ def build_circuit_selector(mode_id: int, bits: int, delta: Point, config: Config
     points = precompute_points(bits)
     strategy = get_oracle_strategy(mode_id, 127)
 
-    # Dispatch to the appropriate mode builder
-    builder_name = f"build_mode_{mode_id}"
-    if builder_name not in globals():
-        logger.warning(f"Mode {mode_id} builder not found, defaulting to Mode 4")
-        builder_name = "build_mode_4_semiclassical"
-
-    return globals()[builder_name](bits, delta_point, config)
-
     # Mode 0: Hardware IPE Diagnostic (136 qubits)
     if mode_id == 0:
-        return build_mode_0_hardware_probe(bits, delta, config)
-
-
-    # --- 1. IPE STANDARD ---
+        return build_mode_0_hardware_probe(bits, delta_point, config)
     elif mode_id == 1:
-        return build_mode_1_ipe_standard(bits, delta, strategy)
-
-
-    # Mode 2: Hive (Chunked) - 127 qubits
+        return build_mode_1_ipe_standard(bits, delta_point, config, strategy)
     elif mode_id == 2:
-        return build_mode_2_hive_chunked(bits, delta, config)
-
-
-    # --- 3. WINDOWED IPE ---
+        return build_mode_2_hive_chunked(bits, delta_point, config)
     elif mode_id == 3:
-        return build_mode_3_windowed_ipe(bits, delta, strategy)
-
-
-    # --- 4. SEMICLASSICAL ---
+        return build_mode_3_windowed_ipe(bits, delta_point, strategy)
     elif mode_id == 4:
-        return build_mode_4_semiclassical(bits, delta, strategy)
-
-
-    # --- 5. AB SHOR (OPTIMIZED) ---
+        return build_mode_4_semiclassical(bits, delta_point, config, strategy)
     elif mode_id == 5:
-        return build_mode_5_ab_shor_optimized(bits, delta)
-
-
-    # --- 6. FT DRAPER TEST ---
+        return build_mode_5_ab_shor_optimized(bits, delta_point)
     elif mode_id == 6:
-        return build_mode_6_ft_draper_test(bits, delta)
-
-
-    # Mode 7: Geometric IPE - 136 qubits
+        return build_mode_6_ft_draper_test(bits, delta_point)
     elif mode_id == 7:
-        return build_mode_7_geometric_ipe(bits, delta, config)
-
-
-    # Mode 8: Verified (Flags) - 136 qubits
+        return build_mode_7_geometric_ipe(bits, delta_point, config)
     elif mode_id == 8:
-        return build_mode_8_verified_flags(bits, delta, config)
-
-
-    # Mode 9: Shadow 2D - 138 qubits
+        return build_mode_8_verified_flags(bits, delta_point, config)
     elif mode_id == 9:
-        return build_mode_9_shadow_2d(bits, delta, config)
-
-
-    # Mode 10: Reverse IPE - 135 qubits
+        return build_mode_9_shadow_2d(bits, delta_point, config)
     elif mode_id == 10:
-        return build_mode_10_reverse_ipe(bits, delta, config)
-
-
-    # Mode 11: Swarm - 127 qubits
+        return build_mode_10_reverse_ipe(bits, delta_point, config)
     elif mode_id == 11:
-        return build_mode_11_swarm(bits, delta, config)
-
-
-    # --- 12. HEAVY DRAPER ---
+        return build_mode_11_swarm(bits, delta_point, config)
     elif mode_id == 12:
-        return build_mode_12_heavy_draper(bits, delta)
-
-
-    # Mode 13: Compressed Shadow - 136 qubits
+        return build_mode_12_heavy_draper(bits, delta_point)
     elif mode_id == 13:
-        return build_mode_13_compressed_shadow(bits, delta, config)
-
-
-    # --- 14. SHOR LOGIC ---
+        return build_mode_13_compressed_shadow(bits, delta_point, config)
     elif mode_id == 14:
-        return build_mode_14_shor_logic(bits, delta, strategy)
-
-
-    # --- 15. GEO IPE (EXP) ---
+        return build_mode_14_shor_logic(bits, delta_point, strategy)
     elif mode_id == 15:
-        return build_mode_15_geo_ipe_exp(bits, delta)
-
-
-    # --- 16. WINDOWED (EXPLICIT) ---
+        return build_mode_15_geo_ipe_exp(bits, delta_point)
     elif mode_id == 16:
-        return build_mode_16_window_explicit(bits, delta)
-
-
-    # --- 17. HIVE SWARM ---
+        return build_mode_16_window_explicit(bits, delta_point)
     elif mode_id == 17:
-        return build_mode_17_hive_swarm(bits, delta)
-
-
-    # --- 18. EXPLICIT LOGIC ---
+        return build_mode_17_hive_swarm(bits, delta_point)
     elif mode_id == 18:
-        return build_mode_18_explicit_logic(bits, delta)
-
-
-    # --- 19. FIXED AB ---
+        return build_mode_18_explicit_logic(bits, delta_point)
     elif mode_id == 19:
-        return build_mode_19_fixed_ab(bits, delta)
-
-
-    # Mode 20: Matrix Mod (NEW)
+        return build_mode_19_fixed_ab(bits, delta_point)
     elif mode_id == 20:
-        return build_mode_20_matrix_mod(bits, delta, config)
-
-
-    # --- 21. PHANTOM PARALLEL ---
+        return build_mode_20_matrix_mod(bits, delta_point, config)
     elif mode_id == 21:
-        return build_mode_21_phantom_parallel(bits, delta, strategy)
-
-
-    # --- 22. SHOR PARALLEL ---
+        return build_mode_21_phantom_parallel(bits, delta_point, strategy)
     elif mode_id == 22:
-        return build_mode_22_shor_parallel(bits, delta, strategy)
-
-
-    # --- 23. GHZ PARALLEL ---
+        return build_mode_22_shor_parallel(bits, delta_point, strategy)
     elif mode_id == 23:
-        return build_mode_23_ghz_parallel(bits, delta, strategy)
-
-
-    # --- 24. VERIFIED PARALLEL ---
+        return build_mode_23_ghz_parallel(bits, delta_point, strategy)
     elif mode_id == 24:
-        return build_mode_24_verified_parallel(bits, delta, strategy)
-
-
-    # Mode 25: Hive Edition - 127 qubits
+        return build_mode_24_verified_parallel(bits, delta_point, strategy)
     elif mode_id == 25:
-        return build_mode_25_hive_edition(bits, delta, config)
-
-
-    # --- 26. EXTRA SHADOW ---
+        return build_mode_25_hive_edition(bits, delta_point, config)
     elif mode_id == 26:
-        return build_mode_26_extra_shadow(bits, delta, strategy)
-
-
-    # --- 27. ADVANCED QPE ---
+        return build_mode_26_extra_shadow(bits, delta_point, strategy)
     elif mode_id == 27:
-        return build_mode_27_advanced_qpe(bits, delta, strategy)
-
-
-    # --- 28. FULL QUANTUM (OPTIMIZED) ---
+        return build_mode_27_advanced_qpe(bits, delta_point, strategy)
     elif mode_id == 28:
-        return build_mode_28_full_quantum_optimized(bits, delta)
-
-
-    # --- 29. SEMICLASSICAL OMEGA ---
+        return build_mode_28_full_quantum_optimized(bits, delta_point)
     elif mode_id == 29:
-        return build_mode_29_semiclassical_omega(bits, delta, strategy)
-
-
-        # Mode KING: Semiclassical Omega KING (NEW)
-    elif mode_id == KING:
-        return build_mode_KING_semiclassical_omega(bits, delta, config)
-
-
-    # --- 30. VERIFIED SHADOW ---
+        return build_mode_29_semiclassical_omega(bits, delta_point, strategy)
+    elif mode_id == 41:
+        return build_mode_41_semiclassical_omega(bits, delta_point, config)
     elif mode_id == 30:
-        return build_mode_30_verified_shadow(bits, delta, strategy)
-
-
-    # --- 31. VERIFIED ADVANCED ---
+        return build_mode_30_verified_shadow(bits, delta_point, strategy)
     elif mode_id == 31:
-        return build_mode_31_verified_advanced(bits, delta, strategy)
-
-
-    # --- 32. HEAVY DRAPER OMEGA ---
+        return build_mode_31_verified_advanced(bits, delta_point, strategy)
     elif mode_id == 32:
-        return build_mode_32_heavy_draper_omega(bits, delta)
-
-
-    # --- 33. COMPRESSED SHADOW OMEGA ---
+        return build_mode_32_heavy_draper_omega(bits, delta_point)
     elif mode_id == 33:
-        return build_mode_33_compressed_shadow_omega(bits, delta, strategy)
-
-
-    # --- 34. SHOR LOGIC OMEGA ---
+        return build_mode_33_compressed_shadow_omega(bits, delta_point, strategy)
     elif mode_id == 34:
-        return build_mode_34_shor_logic_omega(bits, delta, strategy)
-
-
-    # --- 35. GEOMETRIC IPE OMEGA ---
+        return build_mode_34_shor_logic_omega(bits, delta_point, strategy)
     elif mode_id == 35:
-        return build_mode_35_geometric_ipe_omega(bits, delta)
-
-
-    # --- 36. WINDOWED IPE OMEGA ---
+        return build_mode_35_geometric_ipe_omega(bits, delta_point)
     elif mode_id == 36:
-        return build_mode_36_windowed_ipe_omega(bits, delta)
-
-
-    # --- 37. HIVE SWARM OMEGA ---
+        return build_mode_36_windowed_ipe_omega(bits, delta_point)
     elif mode_id == 37:
-        return build_mode_37_hive_swarm_omega(bits, delta)
-
-
-    # Mode 38: Explicit Logic Omega
+        return build_mode_37_hive_swarm_omega(bits, delta_point)
     elif mode_id == 38:
-        return build_mode_38_explicit_logic_omega(bits, delta, config)
-
-
-    # Mode 39: Matrix Mod Omega (NEW)
+        return build_mode_38_explicit_logic_omega(bits, delta_point, config)
     elif mode_id == 39:
-        return build_mode_39_matrix_mod_omega(bits, delta, config)
-
-
-    # --- 40. MATRIX MOD (SMART SCALABLE) ---
+        return build_mode_39_matrix_mod_omega(bits, delta_point, config)
     elif mode_id == 40:
-        return build_mode_40_matrix_mod_smart_scalable(bits, delta)
-
-
-
-
-    # Default to Semiclassical if mode not found
+        return build_mode_40_matrix_mod_smart_scalable(bits, delta_point)
     else:
-        logger.warning(f"Mode {mode_id} not in optimized list, defaulting to Semiclassical (Mode 4)")
-        return build_mode_4_semiclassical(bits, delta, config)
-
+        logger.warning(f"Mode {mode_id} not in optimized list, defaulting to KING (Mode 41)")
+        return build_mode_41_semiclassical_omega(bits, delta_point, config)
 
 # --- MODE 0: HARDWARE IPE DIAGNOSTIC ---
 def build_mode_0_hardware_probe(bits: int, delta: Point, config: Config) -> QuantumCircuit:
@@ -1550,45 +1632,45 @@ def build_mode_0_hardware_probe(bits: int, delta: Point, config: Config) -> Quan
     return qc
 
 
-def build_mode_1_ipe_standard(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
+def build_mode_1_ipe_standard(bits: int, delta: Point, config: Config, strategy: str = "SERIAL") -> QuantumCircuit:
     """Build the circuit for the IPE Standard mode."""
     logger.info(f"Building Mode 1: IPE Standard [Strategy: {strategy}]")
     ctrl = QuantumRegister(1, "ctrl")
     state = QuantumRegister(bits, "state")
     creg = ClassicalRegister(bits, "meas")
     regs = [ctrl, state, creg]
-    
+
     if config.USE_FT:
         regs.append(QuantumRegister(2, "ft_anc"))
-    
+
     qc = QuantumCircuit(*regs)
-    
+
     for k in range(bits):
         if k > 0:
             qc.reset(ctrl[0])
             qc.h(ctrl[0])
-        
+
         if config.USE_FT:
             prepare_verified_ancilla(qc, regs[-1][0])
             prepare_verified_ancilla(qc, regs[-1][1])
             encode_repetition(qc, ctrl[0], regs[-1])
-        
+
         apply_semiclassical_qft_phase_component(qc, ctrl[0], creg, bits, k)
         power = 1 << k
         dx = (delta.x() * power) % N
         dy = (delta.y() * power) % N
-        
+
         if strategy == "2D":
             draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)
         else:
             draper_adder_oracle_1d_serial(qc, ctrl[0], state, dx, dy)
-        
+
         if config.USE_FT:
             decode_repetition(qc, regs[-1], ctrl[0])
-        
+
         qc.h(ctrl[0])
         qc.measure(ctrl[0], creg[k])
-    
+
     return qc
 
 
@@ -1631,7 +1713,7 @@ def build_mode_2_hive_chunked(bits: int, delta: Point, config: Config) -> Quantu
         for j in range(chunk):
             k = start + j
             pwr = 1 << k
-            dx = (delta[0] * pwr) % N
+            dx = (delta.x() * pwr) % N
             draper_adder_oracle_1d_serial(qc, ctrl[j], state, dx, 0)
             apply_semiclassical_qft_phase_component(qc, ctrl[j], creg, bits, k)
 
@@ -1679,48 +1761,48 @@ def build_mode_3_windowed_ipe(bits: int, delta: Point, strategy: str = "SERIAL")
     return qc
 
 
-def build_mode_4_semiclassical(bits: int, delta: Point, strategy: str = "SERIAL") -> QuantumCircuit:
+def build_mode_4_semiclassical(bits: int, delta: Point, config: Config, strategy: str = "SERIAL") -> QuantumCircuit:
     """Build the circuit for the Semiclassical mode."""
     logger.info(f"Building Mode 4: Semiclassical [Strategy: {strategy}]")
     ctrl = QuantumRegister(1, "ctrl")
     state = QuantumRegister(bits, "state")
     creg = ClassicalRegister(bits, "meas")
     regs = [ctrl, state, creg]
-    
+
     if config.USE_FT:
         regs.append(QuantumRegister(2, "ft_anc"))
-    
+
     qc = QuantumCircuit(*regs)
-    
+
     for k in range(bits):
         if k > 0:
             qc.reset(ctrl[0])
             qc.h(ctrl[0])
-        
+
         if config.USE_FT:
             prepare_verified_ancilla(qc, regs[-1][0])
             prepare_verified_ancilla(qc, regs[-1][1])
             encode_repetition(qc, ctrl[0], regs[-1])
-        
+
         for m in range(k):
             with qc.if_test((creg[m], 1)):
                 qc.p(-pi / (2 ** (k - m)), ctrl[0])
-        
+
         power = 1 << k
         dx = (delta.x() * power) % N
         dy = (delta.y() * power) % N
-        
+
         if strategy == "2D":
             draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)
         else:
             draper_adder_oracle_1d_serial(qc, ctrl[0], state, dx, dy)
-        
+
         if config.USE_FT:
             decode_repetition(qc, regs[-1], ctrl[0])
-        
+
         qc.h(ctrl[0])
         qc.measure(ctrl[0], creg[k])
-    
+
     return qc
 
 
@@ -1882,7 +1964,7 @@ def build_mode_8_verified_flags(bits: int, delta: Point, config: Config) -> Quan
 
         apply_semiclassical_qft_phase_component(qc, ctrl[0], c_meas, bits, k)
         power = 1 << k
-        dx = (delta[0] * power) % N
+        dx = (delta.x() * power) % N
         draper_adder_oracle_1d_serial(qc, ctrl[0], state, dx, 0)
 
 
@@ -1949,8 +2031,8 @@ def build_mode_9_shadow_2d(bits: int, delta: Point, config: Config) -> QuantumCi
         for j in range(chunk):
             k = start + j
             pwr = 1 << k
-            dx = (delta[0] * pwr) % N
-            dy = (delta[1] * pwr) % N
+            dx = (delta.x() * pwr) % N
+            dy = (delta.y() * pwr) % N
             draper_adder_oracle_2d(qc, ctrl[j], state, dx, dy)
 
 
@@ -2012,8 +2094,8 @@ def build_mode_10_reverse_ipe(bits: int, delta: Point, config: Config) -> Quantu
 
 
         power = 1 << k
-        dx = (delta[0] * power) % N
-        dy = (delta[1] * power) % N
+        dx = (delta.x() * power) % N
+        dy = (delta.y() * power) % N
         draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)
 
 
@@ -2087,7 +2169,7 @@ def build_mode_11_swarm(bits: int, delta: Point, config: Config) -> QuantumCircu
             for j in range(chunk):
                 k = start + j
                 power = 1 << k
-                dx = (delta[0] * power) % N
+                dx = (delta.x() * power) % N
                 draper_adder_oracle_1d_serial(qc, ctrl, state_reg, dx, 0)
                 apply_semiclassical_qft_phase_component(qc, ctrl, meas, bits, k)
 
@@ -2158,7 +2240,7 @@ def build_mode_13_compressed_shadow(bits: int, delta: Point, config: Config) -> 
         for j in range(chunk):
             k = start + j
             power = 1 << k
-            dx = (delta[0] * power) % N
+            dx = (delta.x() * power) % N
             draper_adder_oracle_1d_serial(qc, ctrl[j], state, dx, 0)
 
 
@@ -2373,20 +2455,20 @@ def build_mode_20_matrix_mod(bits: int, delta: Point, config: Config) -> Quantum
     # Apply matrix modulation
     if config.USE_SMART_GATE:
         # Create scalable unitary gate for modular addition
-        gate = add_const_mod_gate(delta[0], 2 ** bits)
+        gate = add_const_mod_gate(delta.x(), 2 ** bits)
         qc.append(gate, qr)
     else:
         # Fallback to standard QFT-based addition
         qft_reg(qc, qr)
         for i in range(bits):
-            qc.p(2 * math.pi * delta[0] / (2 ** (bits - i)), qr[i])
+            qc.p(2 * math.pi * delta.x() / (2 ** (bits - i)), qr[i])
         iqft_reg(qc, qr)
 
 
     # Apply Draper oracle with delta
     power = 1 << (bits // 2)
-    dx = (delta[0] * power) % N
-    dy = (delta[1] * power) % N
+    dx = (delta.x() * power) % N
+    dy = (delta.y() * power) % N
     draper_adder_oracle_2d(qc, None, qr, dx, dy)
 
 
@@ -2587,22 +2669,17 @@ def build_mode_24_verified_parallel(bits: int, delta: Point, strategy: str = "SE
 
 # --- MODE 25: HIVE EDITION ---
 def build_mode_25_hive_edition(bits: int, delta: Point, config: Config) -> QuantumCircuit:
-    """Build the circuit for the Hive Edition mode with FT support"""
+    """Build the circuit for the Hive Edition mode with FT support."""
     logger.info("Building Mode 25: Hive Edition (127 qubits)")
     available_qubits = 127
     num_workers = available_qubits // (bits + 2)
     if num_workers < 1:
         num_workers = 1
 
-
     regs = [QuantumRegister(bits, "state")]
-
-
-    # Add worker registers
     for w in range(num_workers):
         regs.append(QuantumRegister(1, f'w{w}_c'))
         regs.append(ClassicalRegister(bits, f'w{w}_m'))
-
 
     # Add fault tolerance registers if enabled
     ft_regs = []
@@ -2611,9 +2688,7 @@ def build_mode_25_hive_edition(bits: int, delta: Point, config: Config) -> Quant
         for w in range(num_workers):
             ft_regs.append(QuantumRegister(2, f'ft_w{w}'))
 
-
     qc = QuantumCircuit(*regs, *ft_regs)
-
 
     # Apply fault tolerance if enabled
     ft_ancillas = []
@@ -2622,20 +2697,15 @@ def build_mode_25_hive_edition(bits: int, delta: Point, config: Config) -> Quant
         for w in range(num_workers):
             ft_ancillas.append(apply_ft_to_qubit(qc, regs[1 + w*2][0], config))
 
-
     state_reg = regs[0]
     powers = []
     curr = delta
-
-
     for _ in range(bits):
         powers.append(curr)
         curr = ec_point_add(curr, curr)
 
-
     for w in range(num_workers):
         qc.x(qc.qubits[w * (bits + 1) + 1])
-
 
     for k in range(bits):
         for w in range(num_workers):
@@ -2645,19 +2715,16 @@ def build_mode_25_hive_edition(bits: int, delta: Point, config: Config) -> Quant
             qc.reset(ctrl)
             qc.h(ctrl)
             if powers[k]:
-                #dx, dy = powers[k].x(), powers[k].y()
-                dx, dy = powers[k][0], powers[k][1]
+                dx, dy = powers[k].x(), powers[k].y()  # Fixed: .x() and .y()
                 draper_adder_oracle_1d_serial(qc, ctrl, target_reg, dx, 0)
             qc.h(ctrl)
             qc.measure(ctrl, qc.cregs[w][k])
-
 
     # Decode fault tolerance if enabled
     if config.USE_FT:
         decode_ft_register(qc, state_reg, ft_ancillas[:bits], config)
         for w in range(num_workers):
             decode_repetition(qc, ft_ancillas[bits + w], regs[1 + w*2][0])
-
 
     return qc
 
@@ -2844,7 +2911,7 @@ def build_mode_29_semiclassical_omega(bits: int, delta: Point, strategy: str = "
 
 
 # --- MODE KING: SEMICLASSICAL OMEGA (THE KING) ---
-def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config) -> QuantumCircuit:
+def build_mode_41_semiclassical_omega(bits: int, delta: Point, config: Config) -> QuantumCircuit:
     """Build the circuit for the Semiclassical Omega mode with FT support"""
     logger.info("Building Mode KING: Semiclassical Omega (136 qubits) - THE KING")
     ctrl = QuantumRegister(1, "ctrl")
@@ -2888,8 +2955,8 @@ def build_mode_KING_semiclassical_omega(bits: int, delta: Point, config: Config)
 
 
         power = 1 << k
-        dx = (delta[0] * power) % N
-        dy = (delta[1] * power) % N
+        dx = (delta.x() * power) % N
+        dy = (delta.y() * power) % N
         draper_adder_oracle_2d(qc, ctrl[0], state, dx, dy)
 
 
@@ -3051,16 +3118,15 @@ def build_mode_31_verified_advanced(bits: int, delta: Point, strategy: str = "SE
 
 # delta: Point
 def build_mode_32_heavy_draper_omega(bits: int, delta: Point) -> QuantumCircuit:
-    """Build the circuit for the Heavy Draper Omega mode with precomputed powers"""
+    """Build the circuit for the Heavy Draper Omega mode with precomputed powers."""
     logger.info("Building Mode 32: Heavy Draper Omega")
 
-    # --- PRECOMPUTE POWERS OF DELTA (NEW) ---
+    # Precompute powers of delta
     powers = []
     curr = delta
     for _ in range(bits):
         powers.append(curr)
         curr = ec_point_add(curr, curr)
-    # --- END PRECOMPUTE ---
 
     qr_c = QuantumRegister(1, "ctrl")
     qr_s = QuantumRegister(bits, "state")
@@ -3075,9 +3141,9 @@ def build_mode_32_heavy_draper_omega(bits: int, delta: Point) -> QuantumCircuit:
         qc.reset(qr_c)
         qc.h(qr_c)
 
-        # --- USE PRECOMPUTED POWERS (UPDATED) ---
         if powers[k]:
-            dx = powers[k].x()
+            dx = powers[k].x()  # Fixed: .x()
+            dy = powers[k].y()  # Fixed: .y()
             ft_draper_modular_adder_omega(qc, dx, qr_s, N, qr_anc, qr_tmp)
 
         for m in range(k):
@@ -3144,73 +3210,61 @@ def build_mode_33_compressed_shadow_omega(bits: int, delta: Point, strategy: str
     return qc
 
 # Recover delta: Point
-def build_mode_34_shor_logic_omega(bits: int, delta: Point, strategy: str = "SHOR_MOD") -> QuantumCircuit:
+def build_mode_34_shor_logic_omega(
+    bits: int,
+    delta: Point,
+    strategy: str = "SHOR_MOD"
+) -> QuantumCircuit:
     """Build the circuit for the Shor Logic Omega mode."""
     logger.info(f"Building Mode 34: Shor Logic Omega [Strategy: {strategy}]")
 
     if strategy == "SHOR_PURE":
-        # SHOR_PURE strategy implementation
         reg_a = QuantumRegister(bits, 'a')
         reg_b = QuantumRegister(bits, 'b')
         reg_work = QuantumRegister(bits, 'work')
         creg = ClassicalRegister(2 * bits, 'meas')
         qc = QuantumCircuit(reg_a, reg_b, reg_work, creg)
 
-        # Initialize registers
         qc.h(reg_a)
         qc.h(reg_b)
-        qc.x(reg_work[0])  # Initialize work register
+        qc.x(reg_work[0])
 
-        # Apply modular exponentiation for register a (using generator point G)
         for i in range(bits):
             power = 1 << i
-            # Use G.x() instead of Gx directly
-            sx = (G.x() * power) % N
-            sy = (G.y() * power) % N
+            sx = (G.x() * power) % N  # Fixed: G.x()
+            sy = (G.y() * power) % N  # Fixed: G.y()
             draper_adder_oracle_2d(qc, reg_a[i], reg_work, sx, sy)
 
-        # Apply modular exponentiation for register b (using delta point)
-        target_scalar = delta.x()  # Using delta.x() instead of delta[0]
+        target_scalar = delta.x()  # Fixed: delta.x()
         for i in range(bits):
             power = 1 << i
             sx = (target_scalar * power) % N
-            # We should also include the y-coordinate for completeness
-            sy = (delta.y() * power) % N  # Added y-coordinate
+            sy = (delta.y() * power) % N  # Fixed: delta.y()
             draper_adder_oracle_2d(qc, reg_b[i], reg_work, sx, sy)
 
-        # Apply inverse QFT and measure
         iqft_reg(qc, reg_a)
         iqft_reg(qc, reg_b)
         qc.measure(reg_a, creg[0:bits])
         qc.measure(reg_b, creg[bits:2 * bits])
 
-    else:  # SHOR_MOD strategy
+    else:  # SHOR_MOD
         reg_count = QuantumRegister(bits, 'count')
         reg_state = QuantumRegister(1, 'state')
         reg_temp = QuantumRegister(1, 'temp_ph')
         creg = ClassicalRegister(bits, 'meas')
         qc = QuantumCircuit(reg_count, reg_state, reg_temp, creg)
 
-        # Initialize state register
         qc.x(reg_state[0])
-
-        # Apply QFT to count register
         qft_reg(qc, reg_count)
 
-        # Get delta coordinates using proper Point methods
-        dx = delta.x()  # Using delta.x() instead of delta[0]
-        dy = delta.y()  # Added for completeness
+        dx = delta.x()  # Fixed: delta.x()
+        dy = delta.y()  # Fixed: delta.y()
 
         for i in range(bits):
             power = 1 << i
-            # Use proper point arithmetic
-            scalar_val_x = (G.x() * power + dx * power) % N
-            scalar_val_y = (G.y() * power + dy * power) % N  # Added y-coordinate
-
-            # For phase oracle, we typically only need the x-coordinate
+            scalar_val_x = (G.x() * power + dx * power) % N  # Fixed: G.x()
             eigenvalue_phase_oracle(qc, reg_count[i], reg_state[0], scalar_val_x, bits)
 
-        # Apply inverse QFT and measure
         iqft_reg(qc, reg_count)
         qc.measure(reg_count, creg)
 
@@ -3408,7 +3462,7 @@ def build_mode_39_matrix_mod_omega(bits: int, delta: Point, config: Config) -> Q
     qc.x(qr_s[0])
 
 
-    scalar_val = delta[0]
+    scalar_val = delta.x()
 
 
     for k in range(run_len):
@@ -3562,7 +3616,7 @@ class ErrorMitigationEngine:
             logger.info(f"[📊] Scale {scale} Metrics: Depth={tqc.depth()}, Size={tqc.size()}")
 
 
-            sampler = Sampler(mode=backend)
+            sampler = Sampler(backend)
             sampler = self.configure_sampler_options(sampler)
             sampler.options.resilience_level = 0  # Force Raw for ZNE
 
@@ -3884,7 +3938,7 @@ class UniversalPostProcessor:
         return candidates
 
 
-    def verify_candidate(self, k: int, target_x: int, source: str = ""):
+    def verify_candidate(self, k: int, target_x: int, source: str = "", order: int = N):
         """Verify candidate key with comprehensive checks"""
         try:
             Pt = ec_scalar_mult(k, G)  # Fixed: Using G instead of (Gx, Gy)
@@ -4077,18 +4131,15 @@ def safe_get_counts(result_item) -> Optional[Dict[str, int]]:
     return None
 
 
-def manual_zne(qc: QuantumCircuit, backend, shots: int, scales: List[int] = [1, 3, 5]) -> Dict[str, float]:
-    """Enhanced Manual Zero-Noise Extrapolation with detailed analysis"""
+def manual_zne(qc: QuantumCircuit, backend, shots: int, config: Config, scales: List[int] = [1, 3, 5]) -> Dict[str, float]:
+    """Enhanced Manual Zero-Noise Extrapolation with comprehensive analysis"""
     logger.info(f"🧪 Running Manual ZNE (Scales: {scales}) with {shots} shots...")
-
-
     counts_list = []
     scale_results = {}
 
-
     for scale in scales:
         scaled_qc = qc.copy()
-
+        scale_results[scale] = {}
 
         if scale > 1:
             logger.debug(f"Applying noise scaling factor {scale}")
@@ -4097,66 +4148,62 @@ def manual_zne(qc: QuantumCircuit, backend, shots: int, scales: List[int] = [1, 
                 for q in scaled_qc.qubits:
                     scaled_qc.id(q)
 
-
-        logger.info(f"[⚙️] Transpiling Scale {scale} (ALAP/Sabre)...")
-        transpiled_qc = transpile(
-            scaled_qc, backend=backend, optimization_level=3,
-            scheduling_method='alap', routing_method='sabre'
+        logger.info(f"[⚙️] Transpiling Scale {scale}...")
+        tqc = transpile(
+            scaled_qc,
+            backend=backend,
+            optimization_level=config.OPT_LEVEL,
+            routing_method='sabre' #  scheduling_method='alap',
         )
-
-
-        logger.info(f"[📊] Scale {scale} -> Depth: {transpiled_qc.depth()}, Size: {transpiled_qc.size()}")
+        print(qc)
+        print("Quantum Circuit Details:")
         scale_results[scale] = {
-            'depth': transpiled_qc.depth(),
-            'size': transpiled_qc.size(),
-            'qubits': transpiled_qc.num_qubits
+            'depth': tqc.depth(),
+            'size': tqc.size(),
+            'qubits': tqc.num_qubits,
+            'gates': estimate_gate_counts(tqc)
         }
-
+        logger.debug(f"[📊] Scale {scale} Metrics: Depth={tqc.depth()}, Size={tqc.size()}")
 
         sampler = Sampler(backend)
         sampler = configure_sampler_options(sampler, config)
         sampler.options.resilience_level = 0  # Force Raw for ZNE
 
-
-        job = sampler.run([transpiled_qc], shots=shots)
-        logger.info(f"[📡] ZNE Scale {scale} Job ID: {job.job_id()}")
-
+        job = sampler.run([tqc], shots=shots)
+        logger.debug(f"[📡] ZNE Scale {scale} Job ID: {job.job_id()}")
 
         try:
             job_result = job.result()
             counts = safe_get_counts(job_result[0])
             if counts:
                 counts_list.append(counts)
-                logger.info(f"[✅] Successfully retrieved counts for scale {scale}")
+                logger.debug(f"[✅] Scale {scale}: {len(counts)} unique measurements")
             else:
-                logger.warning(f"[⚠️] No counts retrieved for scale {scale}")
+                logger.warning(f"[⚠️] No counts for scale {scale}")
         except Exception as e:
-            logger.error(f"[❌] ZNE Scale {scale} failed: {e}")
-
+            logger.error(f"[❌] Scale {scale} failed: {e}")
+            continue
 
     if not counts_list:
-        logger.warning("⚠️ No valid counts retrieved from any ZNE scale")
+        logger.warning("⚠️ No valid counts from any ZNE scale")
         return defaultdict(float)
-
 
     logger.info("📈 Performing linear extrapolation...")
     extrapolated = defaultdict(float)
-    keys = set().union(*counts_list)
+    all_keys = set().union(*counts_list)
 
-
-    for k in keys:
-        vals = [c.get(k, 0) for c in counts_list]
+    for key in all_keys:
+        vals = [c.get(key, 0) for c in counts_list]
         if len(vals) > 1:
             try:
                 fit = np.polyfit(scales[:len(vals)], vals, 1)
-                extrapolated[k] = max(0, fit[1])
-                logger.debug(f"Extrapolated value for {k}: {extrapolated[k]}")
+                extrapolated[key] = max(0, fit[1])
+                logger.debug(f"Extrapolated {key}: {extrapolated[key]}")
             except Exception as e:
-                logger.warning(f"Failed to extrapolate for key {k}: {e}")
-                extrapolated[k] = vals[-1]  # Fallback to last value
+                logger.warning(f"Extrapolation failed for {key}: {e}")
+                extrapolated[key] = vals[-1]  # Fallback
         else:
-            extrapolated[k] = vals[0]
-
+            extrapolated[key] = vals[0]
 
     logger.info(f"📊 ZNE Results: {len(extrapolated)} extrapolated values")
     return extrapolated
@@ -4238,41 +4285,49 @@ def run_dragon_code():
     config = Config()
     config.user_menu()
 
-
     # Initialize engines
     mitigation_engine = ErrorMitigationEngine(config)
     post_processor = UniversalPostProcessor(config)
 
+    # Prompt for IBM Quantum credentials if not set
+    if not config.TOKEN:
+        config.TOKEN = input("Enter your IBM Quantum API token: ").strip()
+    if not config.CRN:
+        config.CRN = input("Enter your IBM Quantum CRN (or press Enter for 'free'): ").strip() or "free"
 
     # Connect to IBM Quantum
     logger.info("🔌 Connecting to IBM Quantum services...")
     service = QiskitRuntimeService(
-        channel="ibm_quantum",
+        channel="ibm_quantum_platform",
         token=config.TOKEN,
         instance=config.CRN
     )
 
-
     # Select backend
     backend = select_backend(config)
-
 
     # Decompress target and compute delta
     logger.info("🔐 Decompressing public key...")
     Q = decompress_pubkey(config.COMPRESSED_PUBKEY_HEX)
-    # In run_dragon_code(), replace this line:
+    # In run_dragon_code(), replaced this line:
     # delta = (Q[0] - ec_scalar_mult(config.KEYSPACE_START, (Gx, Gy))[0], Q[1])
     # With these lines:
     start_point = ec_scalar_mult(config.KEYSPACE_START, G)
     delta = ec_point_sub(Q, start_point)
-    logger.info(f"   Public Key: {hex(Q[0])[:10]}...{hex(Q[0])[-10:]}")
-    logger.info(f"   Delta: ({hex(delta[0])[:10]}..., {hex(delta[1])[:10]}...)")
-
+    logger.info(f"   Public Key: {hex(Q.x())[:10]}...{hex(Q.x())[-10:]}")
+    logger.info(f"   Delta: ({hex(delta.x())[:10]}..., {hex(delta.y())[-10:]})")
 
     # Build circuit
-    mode_id = config.METHOD if isinstance(config.METHOD, int) else 0
-    mode_meta = MODE_METADATA[mode_id]
+    if isinstance(config.METHOD, int):
+        if config.METHOD not in MODE_METADATA:
+            logger.warning(f"Mode {config.METHOD} does not exist. Defaulting to Mode KING (41).")
+            mode_id = 41  # Default to KING (41)
+        else:
+            mode_id = config.METHOD
+    else:
+        mode_id = 41  # Default to KING (41) if "smart" or invalid
 
+    mode_meta = MODE_METADATA[mode_id]
 
     logger.info(f"🛠️ Building circuit for mode {mode_id}: {mode_meta['logo']} {mode_meta['name']}")
     logger.info(f"   Success rate: {mode_meta['success']}%")
@@ -4280,9 +4335,8 @@ def run_dragon_code():
     logger.info(f"   Endianness: {mode_meta['endian']}")
     logger.info(f"   Oracle type: {mode_meta['oracle']}")
 
-
-    qc = globals()[f"build_mode_{mode_id}"](config.BITS, delta, config)
-
+    qc = build_circuit_selector(mode_id, config.BITS, delta, config)
+    # qc = globals()[f"build_mode_{mode_id}"](config.BITS, delta, config)
 
     # Circuit analysis
     mitigation_engine.analyze_circuit(qc, backend)
@@ -4290,15 +4344,16 @@ def run_dragon_code():
 
     # Transpile
     logger.info("⚙️ Transpiling circuit...")
+    # transpiled = custom_transpile(qc, backend, optimization_level=config.OPT_LEVEL)
     transpiled = transpile(
         qc,
         backend=backend,
         optimization_level=config.OPT_LEVEL,
-        scheduling_method='alap',
-        routing_method='sabre'
+        routing_method='sabre' # scheduling_method='alap',
     )
-
-
+    
+    print(qc)
+    print("Quantum Circuit Details:")
     logger.info(f"   Original depth: {qc.depth()}")
     logger.info(f"   Transpiled depth: {transpiled.depth()}")
     logger.info(f"   Original size: {qc.size()}")
@@ -4362,7 +4417,7 @@ def run_dragon_code():
 
 if __name__ == "__main__":
     print("""
-    🐉 DRAGON_CODE v135 🐉🔥
+    🐉 DRAGON_CODE v120 🐉🔥
     ----------------------------
     Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai 💰
     ----------------------------
