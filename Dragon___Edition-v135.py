@@ -430,11 +430,7 @@ def decode_ft_qubit(qc: QuantumCircuit, ancillas, logical_qubit):
 # New Mode 1 builder (qubit-based QPE helper)
 # -------------------------
 def apply_QPE_phase_correction_qubit(qc: QuantumCircuit, ctrl_qubit, creg: ClassicalRegister, k: int):
-    """
-    QPE phase correction accepting a single qubit object (ctrl_qubit).
-    This keeps original call-site style of passing ctrl[0].
-    Uses qc.if_test (dynamic circuits).
-    """
+    # Applying QPE phase correction 
     if k <= 0:
         return
     logger.debug(f"[Qubit-helper] Applying QPE phase corrections for k={k} on ctrl {ctrl_qubit}")
@@ -1034,27 +1030,44 @@ def build_mode_41_Shor(bits: int, delta: Point, config) -> QuantumCircuit:
     return qc
 
 def build_mode_42_hive_Shor(bits: int, delta: Point, config) -> QuantumCircuit:
-    """Mode 42: Corrected Hive-Shor (full QPE)."""
+    """Mode 42: Corrected Hive-Shor (Parallel Worker QPE)."""
     workers = 4
-    state_bits = bits // workers
+    # Ensure each worker handles a fair share of the total bits
+    state_bits = bits // workers 
     ctrl = QuantumRegister(workers, "ctrl")
     state = QuantumRegister(state_bits, "state")
     creg = ClassicalRegister(bits, "meas")
     qc = QuantumCircuit(ctrl, state, creg)
     logger.info(f"   - Preparing {workers} workers with {state_bits} qubits each...")
     powers = precompute_powers(delta, bits)
-    logger.info(f"   - Worker {w+1}/{workers}: Applying Hive-Omega oracle...")
+    # Initialize all worker qubits to superposition
+    qc.h(ctrl)
+    # Initialize state to |1>
+    qc.x(state[0])
     for w in range(workers):
+        logger.info(f"   - Hive-Worker {w+1}/{workers}: Applying parallel oracle steps...")
         for k in range(state_bits):
             idx = w * state_bits + k
+            # Safety check to not exceed precomputed powers
+            if idx >= len(powers):
+                break
             dx = powers[idx].x()
-            # Apply bit-specific oracle
+            # 1. Apply phase corrections for iterative QPE
+            if k > 0:
+                # We use the index relative to this worker's classical bits
+                apply_QPE_phase_correction(qc, ctrl[w], creg, k)
+            # 2. Apply bit-specific oracle (Controlled Draper)
             draper_adder_oracle_1d_serial(qc, ctrl[w], state, dx)
-            # MEASURE AND RECYCLE: Required to fill the 25-bit register
-            qc.measure(ctrl[w], creg[idx])
+            # 3. Final Hadamard for the worker before measurement
+            qc.h(ctrl[w])
+            # 4. MEASURE AND RECYCLE: Map the worker result to the global classical bit
+            qc.measure(ctrl[w], creg[idx])  
+            # 5. Reset worker for next bit in its stack
             if k < state_bits - 1:
                 qc.reset(ctrl[w])
                 qc.h(ctrl[w])
+
+    logger.info("✅ Mode 42 (Hive-Shor) circuit built successfully.")
     return qc
 
 def build_mode_43_hive_omega(bits: int, delta: Point, config) -> QuantumCircuit:
@@ -1181,12 +1194,6 @@ def build_mode_1_QPE_standard_qubit(bits: int, delta: Point, config) -> QuantumC
     
 # -------------------------
 def build_mode_2_iteration(bits: int, delta: Point, config, k: int, measured_bits: List[int]) -> QuantumCircuit:
-    """
-    Build a single-iteration circuit for adaptive (no-dynamic) QPE .
-    - measured_bits: list of previously measured bits (0/1) for m in [0..k-1]
-    - returns a circuit that measures only the control qubit (single qubit output)
-    - This circuit is intended to be executed repeatedly (one job per bit) by run_mode_2_adaptive.
-    """
     ctrl = QuantumRegister(1, "ctrl")
     state = QuantumRegister(bits, "state")
     creg = ClassicalRegister(1, f"meas_k_{k}")
@@ -1829,15 +1836,7 @@ class ErrorMitigationEngine:
         return kwargs
 
     def get_v2_options(self, manual_zne: bool = False) -> Any:
-        """
-        Constructs SamplerOptions with proper settings.
-        - Handles different qiskit-ibm-runtime versions
-        - Supports both old and new resilience configurations
-        - Provides detailed logging for debugging
-        - Implements multiple fallback mechanisms
-        """
         logger.info("🔧 Building SamplerOptions...")
-
         # Determine ZNE method
         zne_method = "manual" if manual_zne else getattr(self.config, "ZNE_METHOD", "manual")
         logger.info(f"📋 Configuring for ZNE method: {zne_method}")
@@ -2635,5 +2634,5 @@ if __name__ == "__main__":
     ----------------------------
     🚀 Starting Quantum ECDLP Solver...
     """)
-
+    
     run_dragon_code()
