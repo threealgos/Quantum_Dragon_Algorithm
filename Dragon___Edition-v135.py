@@ -7,13 +7,22 @@
 🔢 Features: Full Draper/QPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
-📌 Components:
+📌  Components :
 - Multiple Quantum Attacks with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum QPU 1 PHisical Qubit ~ 1 million Logical Qubits  .
 - Complete Draper 1D/2D/Scalar + QPE oracle implementations
 - ZNE Advanced error mitigation both manual/standard
 - Powerful post-processing with window scanning
 - Full circuit analysis and visualization
 - Smart mode selection based on backend capabilities
+# For Extra-informations To Save an IBM account Use This save method 
+# With Credentials Already included inside the Code.
+
+API_TOKEN = "YOUR_API_TOKEN"
+QiskitRuntimeService.save_account(channel="ibm_cloud", token=api_token, overwrite=True)
+
+service = QiskitRuntimeService(
+    instance="<CRN>"
+)
 """
 # 1. IMPORTS & CONSTANTS
 # ========================================== 
@@ -124,21 +133,10 @@ except Exception:
 # ---------------- Logging ----------------
 CACHE_DIR = "cache/"
 os.makedirs(CACHE_DIR, exist_ok=True)
-
 # Logging setup 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
-"""
-# For Extra-informations To Save an IBM account Use This save method 
-# With Credentials Already included inside the Code.
 
-API_TOKEN = "YOUR_API_TOKEN"
-QiskitRuntimeService.save_account(channel="ibm_cloud", token=api_token, overwrite=True)
-
-service = QiskitRuntimeService(
-    instance="<CRN>"
-)
-"""
 # -------------------------------------------
 # --- (SECP256k1) Constants  ---
 P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
@@ -2637,4 +2635,5 @@ if __name__ == "__main__":
     ----------------------------
     🚀 Starting Quantum ECDLP Solver...
     """)
+
     run_dragon_code()
