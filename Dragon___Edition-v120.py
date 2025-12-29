@@ -8,7 +8,7 @@ TODO: The Qiskit Code will Be Converted To Guppy ) Quantum programming language 
 🔢 Features: Full Draper/QPE Oracles, Advanced Mitigation, Smart Mode Selection
 💰 Donation: 1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai
 
-📌 Key Components:
+📌  Components:
 - 41 quantum modes with best oracles total the First One is mod_0_porb Just for Futur_use for Google Quantum QPU 1 PHisical Qubit ~ 1 million Logical Qubits.
 - Complete Draper 1D/2D/Scalar + QPE oracle implementations
 - Advanced error mitigation and ZNE
