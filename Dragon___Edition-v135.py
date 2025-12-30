@@ -118,8 +118,6 @@ except Exception:
 # Crypto / math helpers used elsewhere
 from fractions import Fraction
 from ecdsa.ellipticcurve import Point, CurveFp
-# IPython helpers (interactive environments)
-from IPython.display import display, HTML
 from qiskit.providers import BackendV2
 import pickle, os, time
 try:
@@ -2636,3 +2634,4 @@ if __name__ == "__main__":
     """)
     
     run_dragon_code()
+
