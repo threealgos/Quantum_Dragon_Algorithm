@@ -652,21 +652,21 @@ def ecdlp_oracle_ab(qc: QuantumCircuit, a_reg: QuantumRegister, b_reg: QuantumRe
 # 5. MODE METADATA (added Mode 1 and Mode 2)
 # ==========================================
 MODE_METADATA = {
-    0: {"name": "Hardware QPE Diagnostic 👻 ", "qubits": 136, "info": 50, "endian": "LSB", "oracle": "Diagnostic", "logo": "🔢", "supports_ft": False, "supports_rep": False, "method": "phase"},
-    1: {"name": "QPE Standard (qubit helper) 🔁", "qubits": 136, "info": 65, "logo": "🔁", "oracle": "QPE_STD", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    2: {"name": "QPE Adaptive (no-dynamic) ⚙️", "qubits": 136, "info": 70, "logo": "⚙️", "oracle": "QPE_ADAPT", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    27: {"name": "Advanced QPE", "qubits": 136, "info": 70, "endian": "LSB", "oracle": "AdvancedQPE", "logo": "📊", "supports_ft": False, "supports_rep": False, "method": "phase"},
-    28: {"name": "Full Quantum 🕸️ Optimized QPE ", "qubits": 156, "info": 55, "endian": "MSB", "oracle": "FullQuantum", "logo": "💎", "supports_ft": False, "supports_rep": False, "method": "phase"},
-    29: {"name": "QPE Omega 🏆", "qubits": 136, "info": 75, "logo": "🏆", "oracle": "QPE", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    32: {"name": "FT-Draper Omega 🛡️", "qubits": 128, "info": 68, "logo": "🛡️", "oracle": "DraperFT", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    34: {"name": "Modified Shor-Omega 🧠", "qubits": 156, "info": 70, "logo": "🧠", "oracle": "ModifiedShor", "endian": "MSB", "supports_ft": False, "supports_rep": False, "method": "a&b"},
-    35: {"name": "Geo-QPE Omega 🌍", "qubits": 134, "info": 76, "logo": "🌍", "oracle": "GeoQPE", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    39: {"name": "Matrix Mod Omega 🌀", "qubits": 132, "info": 78, "logo": "🌀", "oracle": "Matrix", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    41: {"name": "Shor 👑", "qubits": 136, "info": 85, "logo": "👑", "oracle": "QPEShor", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    42: {"name": "Hive-Shor 🐝👑", "qubits": 127, "info": 82, "logo": "🐝👑", "oracle": "HiveShor", "endian": "LSB", "supports_ft": False, "supports_rep": False, "method": "hive"},
-    43: {"name": "Hive-Omega 🐝🏆", "qubits": 127, "info": 78, "logo": "🐝🏆", "oracle": "HiveOmega", "endian": "LSB", "supports_ft": False, "supports_rep": False, "method": "hive"},
-    44: {"name": "Matrix Unitary 🆕", "qubits": 135, "info": 80, "logo": "📦", "oracle": "MatrixUnitary", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
-    99: {"name": "ULTIMATE_SHOR ⚡", "qubits": 136, "info": 85, "logo": "⚡", "oracle": "Auto", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "auto"}
+    0: {"name": "Hardware QPE Diagnostic 👻 ", "qubits": 136, "infos": 50, "endian": "LSB", "oracle": "Diagnostic", "logo": "🔢", "supports_ft": False, "supports_rep": False, "method": "phase"},
+    1: {"name": "QPE Standard (qubit helper) 🔁", "qubits": 136, "infos": 65, "logo": "🔁", "oracle": "QPE_STD", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    2: {"name": "QPE Adaptive (no-dynamic) ⚙️", "qubits": 136, "infos": 70, "logo": "⚙️", "oracle": "QPE_ADAPT", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    27: {"name": "Advanced QPE", "qubits": 136, "infos": 70, "endian": "LSB", "oracle": "AdvancedQPE", "logo": "📊", "supports_ft": False, "supports_rep": False, "method": "phase"},
+    28: {"name": "Full Quantum 🕸️ Optimized QPE ", "qubits": 156, "infos": 55, "endian": "MSB", "oracle": "FullQuantum", "logo": "💎", "supports_ft": False, "supports_rep": False, "method": "phase"},
+    29: {"name": "QPE Omega 🏆", "qubits": 136, "infos": 75, "logo": "🏆", "oracle": "QPE", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    32: {"name": "FT-Draper Omega 🛡️", "qubits": 128, "infos": 68, "logo": "🛡️", "oracle": "DraperFT", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    34: {"name": "Modified Shor-Omega 🧠", "qubits": 156, "infos": 70, "logo": "🧠", "oracle": "ModifiedShor", "endian": "MSB", "supports_ft": False, "supports_rep": False, "method": "a&b"},
+    35: {"name": "Geo-QPE Omega 🌍", "qubits": 134, "infos": 76, "logo": "🌍", "oracle": "GeoQPE", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    39: {"name": "Matrix Mod Omega 🌀", "qubits": 132, "infos": 78, "logo": "🌀", "oracle": "Matrix", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    41: {"name": "Shor 👑", "qubits": 136, "infos": 85, "logo": "👑", "oracle": "QPEShor", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    42: {"name": "Hive-Shor 🐝👑", "qubits": 127, "infos": 82, "logo": "🐝👑", "oracle": "HiveShor", "endian": "LSB", "supports_ft": False, "supports_rep": False, "method": "hive"},
+    43: {"name": "Hive-Omega 🐝🏆", "qubits": 127, "infos": 78, "logo": "🐝🏆", "oracle": "HiveOmega", "endian": "LSB", "supports_ft": False, "supports_rep": False, "method": "hive"},
+    44: {"name": "Matrix Unitary 🆕", "qubits": 135, "infos": 80, "logo": "📦", "oracle": "MatrixUnitary", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "phase"},
+    99: {"name": "ULTIMATE_SHOR ⚡", "qubits": 136, "infos": 85, "logo": "⚡", "oracle": "Auto", "endian": "LSB", "supports_ft": True, "supports_rep": False, "method": "auto"}
 }
 
 # ==========================================
@@ -2634,4 +2634,5 @@ if __name__ == "__main__":
     """)
     
     run_dragon_code()
+
 
