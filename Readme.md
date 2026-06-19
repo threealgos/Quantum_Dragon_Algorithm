@@ -5,7 +5,7 @@
 Hello Dont Forget to Donate if you successfully unlocked any of the puzzles we know help . 
 
 BTC_ **1NEJcwfcEm7Aax8oJNjRUnY3hEavCjNrai**    / / / / /    
-Puzzles: [https://privatekeys.pw/puzzles/bitcoin-puzzle-tx](https://privatekeys.pw/puzzles/bitcoin-puzzle-tx?table=0&status=all)
+Puzzles: [https://privatekeys.pw/puzzles/bitcoin-puzzle-tx](https://privatekeys.pw/puzzles/bitcoin-puzzle-tx?table=0&status=all) 𓏙𓏙𓏙𓏙𓋍𓄿𓋜𓐭𓃀𓂏𓉢𓆠𓆆𓂾𓐮𓋝𓅕𓊾𓊗𓅱𓂻𓃀𓅔𓐮𓋛𓏙𓏙𓏙𓏙
 <img width="687" height="431" alt="RECOMMENDED_Extra_Try WHAT IS UNDER run_dragon_code()" src="https://github.com/user-attachments/assets/3d113222-865b-4209-8625-2a89d7ba2075" />
 
 **Subject: Targeted ECDLP Solver** 
