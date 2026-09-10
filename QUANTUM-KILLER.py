@@ -7206,7 +7206,11 @@ def _list_pasqal_backends(cfg) -> list:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _list_originqc_backends(cfg) -> list:
-    """List available Origin Quantum Cloud backends."""
+    """List available Origin Quantum Cloud backends.
+
+    Returns the REAL chip IDs (WK_C180, WK_C180_2, WK_C102_400, origin_wukong)
+    that the OriginQC QPU runner submits to — NOT marketing display names.
+    """
     try:
         # OriginQC Python SDK device listing
         import originq as oq
@@ -7214,24 +7218,47 @@ def _list_originqc_backends(cfg) -> list:
             devices = oq.get_backends()
             backends = []
             for d in devices:
+                raw_name = d.get('name', str(d))
+                # Map display names → real chip IDs used by the SDK
+                chip_id = _origin_chip_id_from_display_name(raw_name)
                 backends.append({
-                    'name': d.get('name', str(d)),
+                    'name': chip_id,
+                    'display_name': raw_name,
                     'status': d.get('status', 'online'),
                     'qubits': d.get('qubits', 'N/A'),
                     'pending_jobs': d.get('queue', 'N/A'),
                     'type': 'QPU (Superconducting)',
-                    'recommended': d.get('name', '') in ['Wukong', 'Wukong-180'],
+                    'recommended': chip_id in ['WK_C180', 'WK_C180_2'],
                 })
             return sorted(backends, key=lambda x: (not x['recommended'], x['name']))
     except Exception as e:
         logger.warning(f"OriginQC backend discovery failed: {e}")
-    # 2025-2026 OriginQC verified device names
+    # 2025-2026 OriginQC verified REAL chip IDs (used by pyqpanda3 QCloudService)
     return [
-        {'name': 'Wukong', 'status': 'online', 'qubits': 72, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': True},
-        {'name': 'Wukong-180', 'status': 'online', 'qubits': 180, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': True},
+        {'name': 'WK_C180', 'status': 'online', 'qubits': 180, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': True},
+        {'name': 'WK_C180_2', 'status': 'online', 'qubits': 180, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': True},
+        {'name': 'WK_C102_400', 'status': 'online', 'qubits': 400, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': False},
+        {'name': 'origin_wukong', 'status': 'online', 'qubits': 72, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': False},
         {'name': 'Origin-Pilot', 'status': 'online', 'qubits': 6, 'pending_jobs': 'N/A', 'type': 'QPU (Superconducting)', 'recommended': False},
         {'name': 'origin-sim', 'status': 'online', 'qubits': 24, 'pending_jobs': 'N/A', 'type': 'Simulator', 'recommended': False},
     ]
+
+
+def _origin_chip_id_from_display_name(display_name: str) -> str:
+    """Map OriginQC marketing/display names to real SDK chip IDs.
+
+    The pyqpanda3 QCloudService.backend() method expects the raw chip ID
+    (e.g. 'WK_C180'), not the human-readable name ('Wukong-180').
+    """
+    mapping = {
+        'Wukong': 'origin_wukong',
+        'Wukong-180': 'WK_C180',
+        'Wukong-180-2': 'WK_C180_2',
+        'Wukong-400': 'WK_C102_400',
+        'Origin-Pilot': 'Origin-Pilot',
+        'origin-sim': 'origin-sim',
+    }
+    return mapping.get(display_name, display_name)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -7452,7 +7479,7 @@ def choose_backend_for_platform(platform: str, cfg) -> str:
         "ibm": "ibm_kingston",
         "iqm": "emerald",
         "rigetti": "Cepheus-1-108Q",
-        "origin": "Wukong-180",
+        "origin": "WK_C180",
         "tket": "AerBackend",
         "pennylane": "default.qubit",
         "cirq": "cirq.Simulator",
